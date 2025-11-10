@@ -1,12 +1,23 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { showcaseProjects, projectInterestRequests } from "@/lib/data";
+import { useEffect, useState } from "react";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageIntro } from "@/components/shared/page-intro";
 import { useAuth } from "@/context/auth-context";
 import { Settings, Users, CheckCircle, ExternalLink, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import type { ShowcaseProject } from "@/types";
+
+type ProjectInterest = {
+  id: string;
+  projectId: string;
+  userId: string;
+  status: string;
+  createdAt?: any;
+  userName?: string;
+  userEmail?: string;
+  projectName?: string;
+};
 
 const ManageProjectPage = () => {
   const params = useParams();
@@ -14,12 +25,135 @@ const ManageProjectPage = () => {
   const { user } = useAuth();
   const projectId = params.id as string;
 
-  const project = showcaseProjects.find((p) => p.id === projectId);
-  const pendingRequests = projectInterestRequests.filter(
-    (r) => r.projectId === projectId && r.status === "pending"
-  );
+  const [project, setProject] = useState<ShowcaseProject | null>(null);
+  const [localRequests, setLocalRequests] = useState<ProjectInterest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [projectLoading, setProjectLoading] = useState(true);
 
-  const [localRequests, setLocalRequests] = useState(pendingRequests);
+  // Fetch the project details
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        console.log("🔄 Fetching project:", projectId);
+        const response = await fetch(`/api/projects`);
+        const result = await response.json();
+        
+        if (result.ok && result.data) {
+          const foundProject = result.data.find((p: ShowcaseProject) => p.id === projectId);
+          if (foundProject) {
+            console.log("✅ Found project:", foundProject);
+            setProject(foundProject);
+          } else {
+            console.warn("⚠️  Project not found in data");
+            setProject(null);
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error fetching project:", error);
+      } finally {
+        setProjectLoading(false);
+      }
+    };
+
+    if (projectId) {
+      fetchProject();
+    }
+  }, [projectId]);
+
+    // Fetch project interests from Firestore
+  useEffect(() => {
+    const fetchInterests = async () => {
+      try {
+        console.log("🔄 Fetching interests for project:", projectId);
+        const response = await fetch(`/api/project-interests?projectId=${projectId}&status=pending`);
+        const result = await response.json();
+        
+        if (result.ok && result.data) {
+          console.log("✅ Fetched project interests:", result.data);
+          setLocalRequests(result.data);
+        } else {
+          console.warn("⚠️  Failed to fetch interests:", result.message);
+          setLocalRequests([]); // Set empty array on error
+        }
+      } catch (error) {
+        console.error("❌ Error fetching interests:", error);
+        setLocalRequests([]); // Set empty array on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (projectId) {
+      fetchInterests();
+      // Auto-refresh every 5 seconds to show new requests
+      const interval = setInterval(fetchInterests, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [projectId]);
+
+  const handleApprove = async (interestId: string, projectId: string, userId: string) => {
+    try {
+      const response = await fetch(`/api/project-interests`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          interestId,
+          status: "approved",
+          projectId,
+          userId,
+          deleteAfter: true // Delete the document after approval
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.ok) {
+        console.log("✅ Approved and deleted request:", interestId);
+        alert("✅ User approved to join the project!");
+        // fetchInterests will be called automatically by the interval
+      }
+    } catch (error) {
+      console.error("Failed to approve:", error);
+      alert("Failed to approve request. Please try again.");
+    }
+  };
+
+  const handleReject = async (interestId: string) => {
+    try {
+      const response = await fetch(`/api/project-interests`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          interestId, 
+          status: "rejected",
+          deleteAfter: true // Delete the document after rejection
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.ok) {
+        console.log("❌ Rejected and deleted request:", interestId);
+        alert("❌ Request rejected");
+        // fetchInterests will be called automatically by the interval
+      }
+    } catch (error) {
+      console.error("Failed to reject:", error);
+      alert("Failed to reject request. Please try again.");
+    }
+  };
+
+  // Show loading state while fetching project
+  if (projectLoading) {
+    return (
+      <PageContainer>
+        <div className="text-center py-12">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-emerald-400 border-r-transparent"></div>
+          <p className="mt-4 text-white/60">Loading project...</p>
+        </div>
+      </PageContainer>
+    );
+  }
 
   if (!project) {
     return (
@@ -56,22 +190,6 @@ const ManageProjectPage = () => {
       </PageContainer>
     );
   }
-
-  const handleApprove = (requestId: string) => {
-    const request = localRequests.find((r) => r.id === requestId);
-    if (request) {
-      alert(`✅ Approved ${request.userName} to join ${project.title}! (Demo mode)`);
-      setLocalRequests((prev) => prev.filter((r) => r.id !== requestId));
-    }
-  };
-
-  const handleReject = (requestId: string) => {
-    const request = localRequests.find((r) => r.id === requestId);
-    if (request) {
-      alert(`❌ Rejected ${request.userName}'s request (Demo mode)`);
-      setLocalRequests((prev) => prev.filter((r) => r.id !== requestId));
-    }
-  };
 
   return (
     <PageContainer>
@@ -173,17 +291,17 @@ const ManageProjectPage = () => {
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold">{request.userName}</h3>
-                        <p className="text-sm text-white/60">{request.userEmail}</p>
+                        <h3 className="text-lg font-semibold">{request.userName || request.userId}</h3>
+                        <p className="text-sm text-white/60">{request.userEmail || "No email"}</p>
                         <p className="mt-2 text-xs text-white/50">
-                          Requested on {request.requestedAt}
+                          Requested {request.createdAt ? new Date(request.createdAt.toDate ? request.createdAt.toDate() : request.createdAt).toLocaleDateString() : "recently"}
                         </p>
                       </div>
                     </div>
 
                     <div className="mt-4 flex gap-3">
                       <button
-                        onClick={() => handleApprove(request.id)}
+                        onClick={() => handleApprove(request.id, request.projectId, request.userId)}
                         className="flex flex-1 items-center justify-center gap-2 rounded-full bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-400 transition hover:bg-emerald-400/20"
                       >
                         <CheckCircle className="h-4 w-4" />

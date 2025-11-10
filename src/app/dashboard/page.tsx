@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -22,11 +22,11 @@ import {
   adminQueue,
   calendarSessions,
   leaderboardPreview,
-  showcaseProjects,
   upcomingEvents,
 } from "@/lib/data";
 import { registerProjectInterest, rsvpToEvent } from "@/lib/firebase/firestore";
 import { formatDate } from "@/lib/utils";
+import type { ShowcaseProject } from "@/types";
 
 const STORAGE_KEYS = {
   projects: "project-interest-status",
@@ -70,6 +70,8 @@ const readCache = (key: string) => {
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
+  const [projects, setProjects] = useState<ShowcaseProject[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectStatus, setProjectStatus] = useState<Record<string, string>>(() =>
     readCache(STORAGE_KEYS.projects),
   );
@@ -81,6 +83,36 @@ export default function DashboardPage() {
   );
   const [toast, setToast] = useState<string | null>(null);
 
+  // Fetch projects from Firebase
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        console.log("🔄 Fetching projects from API...");
+        const response = await fetch("/api/projects");
+        console.log("📡 Response status:", response.status);
+        
+        const result = await response.json();
+        console.log("📦 API result:", result);
+        
+        if (result.ok && result.data) {
+          console.log(`✅ Fetched ${result.data.length} projects:`, result.data);
+          setProjects(result.data);
+        } else {
+          console.warn("⚠️  API returned ok:false or no data:", result);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching projects:", error);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+
+    fetchProjects();
+    // Auto-refresh projects every 10 seconds
+    const interval = setInterval(fetchProjects, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   const profile = useMemo(
     () => ({
       points: user?.points ?? 1250,
@@ -89,6 +121,12 @@ export default function DashboardPage() {
     }),
     [user],
   );
+
+  // Log user info for debugging
+  useEffect(() => {
+    console.log("👤 Current user:", user);
+    console.log("👤 Profile role:", profile.role);
+  }, [user, profile.role]);
 
   const handleProjectRequest = async (projectId: string) => {
     setProjectStatus((prev) => ({ ...prev, [projectId]: "sending" }));
@@ -232,10 +270,19 @@ export default function DashboardPage() {
                   >
                     View all
                   </Link>
-                </div>
               </div>
-              <div className="mt-6 space-y-4">
-                {showcaseProjects.map((project) => (
+            </div>
+            <div className="mt-6 space-y-4">
+                {loadingProjects ? (
+                  <div className="text-center text-white/60 py-8">
+                    Loading projects...
+                  </div>
+                ) : projects.length === 0 ? (
+                  <div className="text-center text-white/60 py-8">
+                    No projects found. Create your first project!
+                  </div>
+                ) : (
+                  projects.map((project) => (
                   <div
                     key={project.id}
                     className="rounded-2xl border border-white/10 bg-white/5 p-5"
@@ -281,7 +328,8 @@ export default function DashboardPage() {
                       </Button>
                     )}
                   </div>
-                ))}
+                ))
+                )}
               </div>
             </div>
 
