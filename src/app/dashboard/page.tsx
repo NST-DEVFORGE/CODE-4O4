@@ -10,6 +10,8 @@ import {
   Layers,
   ListChecks,
   LogOut,
+  Plus,
+  Settings,
   ShieldCheck,
   Trophy,
   Users,
@@ -216,12 +218,21 @@ export default function DashboardPage() {
                   </p>
                   <h2 className="text-2xl font-semibold">Squads open for you</h2>
                 </div>
-                <Link
-                  href="/projects"
-                  className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:border-emerald-300 hover:text-white"
-                >
-                  View all
-                </Link>
+                <div className="flex gap-2">
+                  <Link
+                    href="/dashboard/projects/create"
+                    className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[#00f5c4] to-[#00c2ff] px-4 py-2 text-sm font-medium text-black transition hover:opacity-90"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Create</span>
+                  </Link>
+                  <Link
+                    href="/projects"
+                    className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:border-emerald-300 hover:text-white"
+                  >
+                    View all
+                  </Link>
+                </div>
               </div>
               <div className="mt-6 space-y-4">
                 {showcaseProjects.map((project) => (
@@ -248,15 +259,27 @@ export default function DashboardPage() {
                         {project.status}
                       </span>
                     </div>
-                    <Button
-                      className="mt-4 text-sm"
-                      onClick={() => handleProjectRequest(project.id)}
-                      disabled={projectStatus[project.id] === "sent"}
-                    >
-                      {projectStatus[project.id] === "sent"
-                        ? "Request sent"
-                        : "Request to join"}
-                    </Button>
+                    {user && (project.ownerId === user.id || project.owner.startsWith(user.name)) ? (
+                      // Owner sees manage button
+                      <Link
+                        href={`/dashboard/projects/${project.id}/manage`}
+                        className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#00f5c4] to-[#00c2ff] px-4 py-2 text-sm font-medium text-black transition hover:opacity-90"
+                      >
+                        <Settings className="h-4 w-4" />
+                        Manage Project
+                      </Link>
+                    ) : (
+                      // Non-owners see join button
+                      <Button
+                        className="mt-4 text-sm"
+                        onClick={() => handleProjectRequest(project.id)}
+                        disabled={projectStatus[project.id] === "sent"}
+                      >
+                        {projectStatus[project.id] === "sent"
+                          ? "Request sent"
+                          : "Request to join"}
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>

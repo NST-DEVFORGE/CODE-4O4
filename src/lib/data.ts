@@ -4,6 +4,7 @@ import type {
   ClubEvent,
   FeatureCard,
   LeaderboardEntry,
+  ProjectInterestRequest,
   ShowcaseProject,
 } from "@/types";
 
@@ -88,7 +89,8 @@ export const showcaseProjects: ShowcaseProject[] = [
     status: "active",
     members: 1,
     tech: ["Next.js", "Firebase", "TypeScript", "Tailwind"],
-    owner: "Geetansh • Admin",
+    owner: "Geetansh Goyal",
+    ownerId: "geetansh-1", // Match user ID for ownership check
   },
   // Add more projects here as needed
 ];
@@ -200,4 +202,18 @@ export const availableInterests = [
   "DevOps",
   "Cloud",
   "Cybersecurity",
+];
+
+export const projectInterestRequests: ProjectInterestRequest[] = [
+  {
+    id: "interest-1",
+    projectId: "geetansh-project",
+    projectName: "Dev Club Portal",
+    userId: "utsav-1",
+    userName: "Utsav",
+    userEmail: "utsav@nstswc.com",
+    requestedAt: "2025-11-10",
+    status: "pending",
+  },
+  // Add more as users request to join projects
 ];

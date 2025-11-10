@@ -47,6 +47,7 @@ export type ShowcaseProject = {
   members: number;
   tech: string[];
   owner: string;
+  ownerId?: string; // User ID of the project owner for permission checks
 };
 
 export type ClubEvent = {
@@ -86,4 +87,15 @@ export type AdminRequest = {
   role: MemberRole;
   interests: string[];
   portfolio: string;
+};
+
+export type ProjectInterestRequest = {
+  id: string;
+  projectId: string;
+  projectName: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  requestedAt: string;
+  status: "pending" | "approved" | "rejected";
 };

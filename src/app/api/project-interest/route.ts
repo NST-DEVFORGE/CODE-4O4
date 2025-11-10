@@ -11,42 +11,44 @@ export async function POST(request: Request) {
       userId?: string;
     };
     
-    console.log("Received project interest request:", { projectId, userId });
+    console.log("📝 Received project interest request:", { projectId, userId });
     
     if (!projectId || !userId) {
-      console.error("Missing required fields:", { projectId, userId });
+      console.error("❌ Missing required fields:", { projectId, userId });
       return NextResponse.json(
         { ok: false, message: "Missing project or user id" },
         { status: 400 },
       );
     }
     
-    // Try to save to Firestore, but don't fail if it doesn't work (demo mode)
     try {
-      console.log("Getting Firestore database...");
+      console.log("🔄 Getting Firestore database...");
       const db = getDb();
       
-      console.log("Writing to projectInterests collection...");
+      console.log("💾 Writing to projectInterests collection...");
       const docRef = await db.collection("projectInterests").add({
         projectId,
         userId,
+        status: "pending",
         createdAt: serverTimestamp(),
       });
       
       console.log("✅ Successfully saved project interest with ID:", docRef.id);
-      return NextResponse.json({ ok: true, message: "Project lead notified." });
+      return NextResponse.json({ 
+        ok: true, 
+        message: "Project lead notified.",
+        data: { id: docRef.id }
+      });
     } catch (firestoreError) {
-      // Log the error but still return success for demo purposes
-      console.warn("⚠️  Firestore save failed (running in demo mode):", String(firestoreError));
-      console.log("✅ Demo mode: Project interest logged for:", projectId, "from user:", userId);
+      console.warn("⚠️  Firestore save failed:", String(firestoreError));
+      console.log("🔄 Running in demo mode - data logged to console");
       return NextResponse.json({ 
         ok: true, 
         message: "Project lead notified. (Demo mode - not persisted)" 
       });
     }
   } catch (error) {
-    console.error("project interest error details:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : "N/A");
+    console.error("❌ project interest error:", error);
     return NextResponse.json(
       { ok: false, message: "Unable to save interest.", error: String(error) },
       { status: 500 },
