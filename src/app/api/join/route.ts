@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getDb, serverTimestamp } from "@/lib/firebase/admin";
 import type { JoinRequestPayload } from "@/types";
 
+// Force Node.js runtime for firebase-admin
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as JoinRequestPayload;

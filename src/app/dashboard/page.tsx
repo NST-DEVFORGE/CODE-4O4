@@ -10,7 +10,6 @@ import {
   Layers,
   ListChecks,
   LogOut,
-  MessageCircle,
   ShieldCheck,
   Trophy,
   Users,
@@ -33,16 +32,15 @@ const STORAGE_KEYS = {
 };
 
 const navLinks = [
-  { label: "Dashboard", icon: Layers, href: "/dashboard" },
   { label: "Projects", icon: ListChecks, href: "/projects" },
   { label: "Events", icon: CalendarDays, href: "/events" },
-  { label: "Chat", icon: MessageCircle, href: "/" },
+  { label: "Sessions", icon: Clock, href: "/sessions" },
   { label: "Leaderboard", icon: Trophy, href: "/leaderboard" },
   { label: "Admin", icon: ShieldCheck, href: "/admin" },
 ];
 
 const statCards = [
-  { label: "Active Projects", value: 3, icon: Layers, tone: "emerald" },
+  { label: "Active Projects", value: 1, icon: Layers, tone: "emerald" },
   { label: "Upcoming Events", value: 3, icon: CalendarDays, tone: "sky" },
   { label: "Sprint Sessions", value: 4, icon: Clock, tone: "indigo" },
   { label: "Your Points", value: 1500, icon: Trophy, tone: "amber" },
@@ -139,16 +137,18 @@ export default function DashboardPage() {
             </p>
           </div>
           <nav className="flex flex-col gap-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/5 hover:text-white"
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </Link>
-            ))}
+            {navLinks
+              .filter((link) => link.label !== "Admin" || profile.role === "admin")
+              .map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/5 hover:text-white"
+                >
+                  <link.icon className="h-4 w-4" />
+                  {link.label}
+                </Link>
+              ))}
           </nav>
           <Button variant="ghost" className="mt-auto" onClick={logout}>
             <LogOut className="h-4 w-4" /> Logout

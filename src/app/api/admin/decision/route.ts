@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDb, serverTimestamp } from "@/lib/firebase/admin";
 
+// Force Node.js runtime for firebase-admin
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
     const { id, decision } = (await request.json()) as {

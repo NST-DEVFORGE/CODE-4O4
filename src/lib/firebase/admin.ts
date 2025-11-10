@@ -14,24 +14,60 @@ const getServiceAccount = (): ServiceAccount | null => {
       console.warn("Failed to parse FIREBASE_SERVICE_ACCOUNT env", error);
     }
   }
-  return (serviceAccountJson as ServiceAccount) ?? null;
+  // Convert the imported JSON (with snake_case) to ServiceAccount format (camelCase)
+  const json = serviceAccountJson as ServiceAccount & {
+    project_id: string;
+    private_key: string;
+    client_email: string;
+  };
+  if (!json || !json.project_id) {
+    console.error("Service account JSON is invalid or missing");
+    return null;
+  }
+  return {
+    projectId: json.project_id,
+    privateKey: json.private_key,
+    clientEmail: json.client_email,
+  } as ServiceAccount;
 };
 
 export const getAdminApp = () => {
-  if (adminApp) return adminApp;
-  if (getApps().length) {
-    adminApp = getApps()[0]!;
+  try {
+    if (adminApp) {
+      console.log("Using existing admin app");
+      return adminApp;
+    }
+    if (getApps().length) {
+      console.log("Using existing Firebase app from getApps()");
+      adminApp = getApps()[0]!;
+      return adminApp;
+    }
+    console.log("Initializing new Firebase admin app...");
+    const credentials = getServiceAccount();
+    if (!credentials) {
+      throw new Error("Missing Firebase service account credentials");
+    }
+    console.log("Service account loaded, project:", credentials.projectId);
+    adminApp = initializeApp({
+      credential: cert(credentials),
+    });
+    console.log("Firebase admin app initialized successfully");
     return adminApp;
+  } catch (error) {
+    console.error("Failed to get/initialize Firebase admin app:", error);
+    throw error;
   }
-  const credentials = getServiceAccount();
-  if (!credentials) {
-    throw new Error("Missing Firebase service account credentials");
-  }
-  adminApp = initializeApp({
-    credential: cert(credentials),
-  });
-  return adminApp;
 };
 
-export const getDb = () => getFirestore(getAdminApp());
+export const getDb = () => {
+  try {
+    const app = getAdminApp();
+    const db = getFirestore(app);
+    console.log("Firestore instance obtained");
+    return db;
+  } catch (error) {
+    console.error("Failed to get Firestore instance:", error);
+    throw error;
+  }
+};
 export const serverTimestamp = FieldValue.serverTimestamp;

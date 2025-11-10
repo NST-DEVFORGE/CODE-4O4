@@ -73,7 +73,7 @@ export type LeaderboardEntry = {
   id: string;
   rank: number;
   name: string;
-  role: MemberRole | "mentor";
+  role: MemberRole | "admin";
   points: number;
   badges: number;
 };

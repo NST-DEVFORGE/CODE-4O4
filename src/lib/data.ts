@@ -81,35 +81,16 @@ export const journeySteps = [
 
 export const showcaseProjects: ShowcaseProject[] = [
   {
-    id: "ai-playground",
-    title: "AI Playground Platform",
+    id: "geetansh-project",
+    title: "Dev Club Portal",
     description:
-      "A web-based suite of AI-assisted tools featuring real-time collaboration and voice inputs.",
+      "Modern club management system with project tracking, event RSVPs, and member dashboard.",
     status: "active",
-    members: 8,
-    tech: ["Next.js", "Firebase", "OpenAI", "Tailwind"],
-    owner: "Helena • Mentor",
+    members: 1,
+    tech: ["Next.js", "Firebase", "TypeScript", "Tailwind"],
+    owner: "Geetansh • Admin",
   },
-  {
-    id: "campus-connect",
-    title: "Campus Connect App",
-    description:
-      "Mobile-first social layer for campus clubs with event drops, spaces, and leaderboards.",
-    status: "recruiting",
-    members: 5,
-    tech: ["React Native", "Supabase", "Expo"],
-    owner: "Aditya • Core Team",
-  },
-  {
-    id: "ethos",
-    title: "Ethos Design System",
-    description:
-      "Unified design kit with token automation, figma plugins, and accessible web components.",
-    status: "waitlist",
-    members: 11,
-    tech: ["Figma", "Storybook", "Radix"],
-    owner: "Mira • Design Lead",
-  },
+  // Add more projects here as needed
 ];
 
 export const upcomingEvents: ClubEvent[] = [
@@ -174,29 +155,39 @@ export const calendarSessions: CalendarSession[] = [
 ];
 
 export const leaderboardPreview: LeaderboardEntry[] = [
-  { id: "tania", rank: 1, name: "Tania Builder", role: "mentor", points: 1520, badges: 6 },
-  { id: "irfan", rank: 2, name: "Irfan Shah", role: "student", points: 1310, badges: 4 },
-  { id: "meera", rank: 3, name: "Meera K", role: "student", points: 1190, badges: 3 },
+  { id: "geetansh", rank: 1, name: "Geetansh Goyal", role: "mentor", points: 1800, badges: 7 },
+  { id: "utsav", rank: 2, name: "Utsav", role: "student", points: 1200, badges: 4 },
+  { id: "user3", rank: 3, name: "User Three", role: "student", points: 800, badges: 2 },
+  { id: "user4", rank: 4, name: "User Four", role: "student", points: 600, badges: 1 },
 ];
 
 export const adminQueue: AdminRequest[] = [
   {
     id: "req-1",
-    name: "Sonia Dsouza",
-    email: "sonia@campus.dev",
-    requestedAt: "2025-01-10",
+    name: "Rahul Sharma",
+    email: "rahul@campus.dev",
+    requestedAt: "2025-11-10",
     role: "student",
-    interests: ["AI/ML", "Design Systems", "Community"],
-    portfolio: "https://github.com/soniadcodes",
+    interests: ["Web Development", "AI/ML"],
+    portfolio: "https://github.com/rahulsharma",
   },
   {
     id: "req-2",
-    name: "Marcus Hill",
-    email: "marcus@campus.dev",
-    requestedAt: "2025-01-09",
+    name: "Priya Patel",
+    email: "priya@campus.dev",
+    requestedAt: "2025-11-09",
+    role: "student",
+    interests: ["Mobile Apps", "Design Systems"],
+    portfolio: "https://priya.design",
+  },
+  {
+    id: "req-3",
+    name: "Amit Kumar",
+    email: "amit@campus.dev",
+    requestedAt: "2025-11-08",
     role: "mentor",
-    interests: ["Product Strategy", "Infrastructure"],
-    portfolio: "https://marcus.design",
+    interests: ["DevOps", "Cloud Infrastructure"],
+    portfolio: "https://github.com/amitkumar",
   },
 ];
 
