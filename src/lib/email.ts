@@ -28,7 +28,22 @@ export async function sendCredentialsEmail({
   password: string;
 }) {
   try {
+    console.log(`📧 [Email Service] Starting email send process...`);
+    console.log(`   Environment check:`, {
+      hasHost: !!process.env.SMTP_HOST,
+      hasPort: !!process.env.SMTP_PORT,
+      hasUser: !!process.env.SMTP_USER,
+      hasPass: !!process.env.SMTP_PASS,
+    });
+
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      const error = "SMTP credentials not configured. Check environment variables.";
+      console.error(`❌ [Email Service] ${error}`);
+      return { success: false, error };
+    }
+
     const transporter = createTransporter();
+    console.log(`✅ [Email Service] Transporter created`);
 
     const mailOptions = {
       from: `"CODE 4O4 Dev Club" <${process.env.SMTP_USER}>`,
@@ -187,11 +202,15 @@ CODE 4O4 Dev Club Team
       `,
     };
 
+    console.log(`📤 [Email Service] Attempting to send email...`);
     const info = await transporter.sendMail(mailOptions);
-    console.log("✅ Email sent successfully:", info.messageId);
+    console.log("✅ [Email Service] Email sent successfully:", info.messageId);
     return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error("❌ Error sending email:", error);
+  } catch (error: any) {
+    console.error("❌ [Email Service] Error sending email:", error);
+    console.error("   Error code:", error?.code);
+    console.error("   Error response:", error?.response);
+    console.error("   Error command:", error?.command);
     return { success: false, error: String(error) };
   }
 }

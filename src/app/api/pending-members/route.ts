@@ -137,7 +137,18 @@ export async function PATCH(request: Request) {
       // Send welcome email with credentials
       if (memberData?.email) {
         try {
-          console.log(`📧 Sending welcome email to ${memberData.email}...`);
+          console.log(`📧 Attempting to send welcome email...`);
+          console.log(`   To: ${memberData.email}`);
+          console.log(`   Name: ${memberData.name}`);
+          console.log(`   Username: ${username}`);
+          console.log(`   Password: ${password}`);
+          console.log(`   SMTP Config:`, {
+            host: process.env.SMTP_HOST,
+            port: process.env.SMTP_PORT,
+            user: process.env.SMTP_USER,
+            hasPass: !!process.env.SMTP_PASS,
+          });
+          
           const emailResult = await sendCredentialsEmail({
             to: memberData.email,
             name: memberData.name || "Member",
@@ -147,13 +158,17 @@ export async function PATCH(request: Request) {
           
           if (emailResult.success) {
             console.log(`✅ Welcome email sent successfully to ${memberData.email}`);
+            console.log(`   Message ID: ${emailResult.messageId}`);
           } else {
             console.error(`❌ Failed to send welcome email: ${emailResult.error}`);
           }
         } catch (emailError) {
           console.error("❌ Error sending welcome email:", emailError);
+          console.error("   Full error:", JSON.stringify(emailError, null, 2));
           // Don't fail the approval if email fails
         }
+      } else {
+        console.warn('⚠️  No email address found for member, skipping email send');
       }
     }
     
