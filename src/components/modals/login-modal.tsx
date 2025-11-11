@@ -92,15 +92,21 @@ export const LoginModal = ({ open, onClose }: ModalProps) => {
             {user ? (
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="relative h-10 w-10 overflow-hidden rounded-full border border-white/20">
-                    <Image
-                      src={user.avatar}
-                      alt={user.name}
-                      fill
-                      sizes="40px"
-                      className="object-cover"
-                    />
-                  </div>
+                  {user.avatar ? (
+                    <div className="relative h-10 w-10 overflow-hidden rounded-full border border-white/20">
+                      <Image
+                        src={user.avatar}
+                        alt={user.name}
+                        fill
+                        sizes="40px"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 text-lg font-semibold text-black">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <p className="text-base font-semibold">{user.name}</p>
                     <p className="text-sm text-white/60">{user.email}</p>

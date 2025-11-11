@@ -15,6 +15,7 @@ type AuthContextValue = {
   user: ClubUser | null;
   login: (credentials: LoginCredentials) => Promise<ActionResult>;
   logout: () => void;
+  updateUser: (updates: Partial<ClubUser>) => void;
   isAuthenticated: boolean;
 };
 
@@ -97,6 +98,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const updateUser = useCallback((updates: Partial<ClubUser>) => {
+    setUser((prevUser) => {
+      if (!prevUser) return null;
+      const updatedUser = { ...prevUser, ...updates };
+      
+      // Update localStorage and cookie
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+        document.cookie = `code404-user=${encodeURIComponent(JSON.stringify(updatedUser))}; path=/; max-age=2592000; SameSite=Lax`;
+      }
+      
+      return updatedUser;
+    });
+  }, []);
+
   const sessionUser = hydrated ? user : null;
 
   const value = useMemo<AuthContextValue>(
@@ -104,9 +120,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user: sessionUser,
       login,
       logout,
+      updateUser,
       isAuthenticated: Boolean(sessionUser),
     }),
-    [login, logout, sessionUser],
+    [login, logout, updateUser, sessionUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

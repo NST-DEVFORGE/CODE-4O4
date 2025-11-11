@@ -168,6 +168,23 @@ export async function PATCH(request: Request) {
         });
         
         console.log(`✅ Added user ${userId} to projectMembers for project ${projectId}`);
+        
+        // Award points for joining a project
+        try {
+          const userRef = db.collection("members").doc(userId);
+          const userDoc = await userRef.get();
+          if (userDoc.exists) {
+            const currentPoints = userDoc.data()?.points || 0;
+            await userRef.update({
+              points: currentPoints + 10, // Award 10 points for joining
+              updatedAt: new Date(),
+            });
+            console.log(`🏆 Awarded 10 points to user ${userId} for joining project`);
+          }
+        } catch (pointsError) {
+          console.warn("⚠️  Failed to award points:", pointsError);
+          // Don't fail the whole operation if points update fails
+        }
       }
       
       // Record the decision in adminDecisions

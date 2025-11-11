@@ -172,18 +172,24 @@ const Header = ({
       {isAuthenticated && user ? (
         <>
           <Link
-            href="/dashboard"
+            href="/dashboard/profile"
             className="flex items-center gap-3 rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:border-emerald-300 hover:text-white"
           >
-            <div className="relative h-8 w-8 overflow-hidden rounded-full border border-white/20">
-              <Image
-                src={user.avatar}
-                alt={user.name}
-                fill
-                sizes="32px"
-                className="object-cover"
-              />
-            </div>
+            {user.avatar ? (
+              <div className="relative h-8 w-8 overflow-hidden rounded-full border border-white/20">
+                <Image
+                  src={user.avatar}
+                  alt={user.name}
+                  fill
+                  sizes="32px"
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 text-sm font-semibold text-black">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+            )}
             <span>{user.name.split(" ")[0]}</span>
           </Link>
           <Button variant="ghost" onClick={onLogout}>

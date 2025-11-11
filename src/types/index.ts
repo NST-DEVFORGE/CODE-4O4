@@ -26,10 +26,21 @@ export type ClubUser = {
   id: string;
   name: string;
   email: string;
-  avatar: string;
+  avatar?: string;
   role: MemberRole | "admin";
   points: number;
   badges: number;
+  phone?: string;
+  github?: string;
+  portfolio?: string;
+  bio?: string;
+  skills?: string[];
+  interests?: string[];
+  experience?: ExperienceLevel;
+  availability?: string;
+  projectsCompleted?: number;
+  createdAt?: any;
+  updatedAt?: any;
 };
 
 export type FeatureCard = {
@@ -43,11 +54,16 @@ export type ShowcaseProject = {
   id: string;
   title: string;
   description: string;
-  status: "active" | "recruiting" | "waitlist";
+  status: "active" | "recruiting" | "waitlist" | "completed";
   members: number;
   tech: string[];
   owner: string;
   ownerId?: string; // User ID of the project owner for permission checks
+  githubUrl?: string;
+  demoUrl?: string;
+  docsUrl?: string;
+  createdAt?: any;
+  updatedAt?: any;
 };
 
 export type ClubEvent = {

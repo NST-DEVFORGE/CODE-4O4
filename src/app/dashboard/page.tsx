@@ -12,6 +12,9 @@ import {
   Settings,
   ShieldCheck,
   Users,
+  User,
+  Menu,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
@@ -53,19 +56,15 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<ShowcaseProject[]>([]);
   const [userProjects, setUserProjects] = useState<any[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState({
     activeProjects: 0,
-    upcomingEvents: 0,
     upcomingSessions: 0,
   });
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [projectStatus, setProjectStatus] = useState<Record<string, string>>(() =>
     readCache(STORAGE_KEYS.projects),
-  );
-  const [eventStatus, setEventStatus] = useState<Record<string, string>>(() =>
-    readCache(STORAGE_KEYS.events),
   );
 
   // Fetch user-specific dashboard data
@@ -99,29 +98,7 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // Fetch events from Firebase
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        console.log("🔄 Fetching events from API...");
-        const response = await fetch("/api/events");
-        const result = await response.json();
-        
-        if (result.ok && result.data) {
-          console.log(`✅ Fetched ${result.data.length} events`);
-          setUpcomingEvents(result.data);
-        }
-      } catch (error) {
-        console.error("❌ Error fetching events:", error);
-      }
-    };
-
-    fetchEvents();
-    const interval = setInterval(fetchEvents, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fetch projects from Firebase
+  // Fetch projects from Firebase (only on page load)
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -146,9 +123,7 @@ export default function DashboardPage() {
     };
 
     fetchProjects();
-    // Auto-refresh projects every 10 seconds
-    const interval = setInterval(fetchProjects, 10000);
-    return () => clearInterval(interval);
+    // Removed auto-refresh to save Firebase reads
   }, []);
 
   const profile = useMemo(
@@ -161,7 +136,6 @@ export default function DashboardPage() {
   // Dynamic stat cards based on user data (removed points and badges)
   const dynamicStatCards = useMemo(() => [
     { label: "Active Projects", value: stats.activeProjects, icon: Layers, tone: "emerald" },
-    { label: "Upcoming Events", value: stats.upcomingEvents || 0, icon: CalendarDays, tone: "sky" },
     { label: "Upcoming Sessions", value: stats.upcomingSessions, icon: Clock, tone: "indigo" },
   ], [stats]);
 
@@ -177,58 +151,117 @@ export default function DashboardPage() {
     });
   };
 
-  const handleEventRsvp = async (eventId: string) => {
-    setEventStatus((prev) => ({ ...prev, [eventId]: "sending" }));
-    const result = await rsvpToEvent(eventId, user?.id ?? "preview");
-    setEventStatus((prev) => {
-      const next = { ...prev, [eventId]: result.ok ? "sent" : "error" };
-      if (result.ok && typeof window !== "undefined") {
-        window.localStorage.setItem(STORAGE_KEYS.events, JSON.stringify(next));
-      }
-      return next;
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-[#010107] pb-16 text-white">
-      <div className="mx-auto flex max-w-6xl gap-6 px-4 pt-10 sm:px-6 lg:px-8">
-        <aside className="hidden w-56 flex-col gap-6 rounded-3xl border border-white/10 bg-black/40 p-6 md:flex">
-          <div>
-            <p className="text-lg font-semibold">CODE 4O4 Dev Club</p>
-            <p className="text-xs uppercase tracking-[0.3em] text-white/50">
-              Portal
-            </p>
+    <div className="min-h-screen bg-[#010107] text-white">
+      {/* Top Navigation Bar */}
+      <div className="sticky top-0 z-50 border-b border-white/10 bg-[#010107]/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-8">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.3em]">CODE 4O4 Dev Club</p>
+            </div>
+            <nav className="hidden items-center gap-1 md:flex">
+              {navLinks
+                .filter((link) => link.label !== "Admin" || profile.role === "admin")
+                .map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/70 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <link.icon className="h-4 w-4" />
+                    {link.label}
+                  </Link>
+                ))}
+            </nav>
           </div>
-          <nav className="flex flex-col gap-2">
-            {navLinks
-              .filter((link) => link.label !== "Admin" || profile.role === "admin")
-              .map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/5 hover:text-white"
-                >
-                  <link.icon className="h-4 w-4" />
-                  {link.label}
-                </Link>
-              ))}
-          </nav>
-          <Button variant="ghost" className="mt-auto" onClick={logout}>
-            <LogOut className="h-4 w-4" /> Logout
-          </Button>
-        </aside>
+          
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-sm text-white/80 transition hover:border-emerald-300 hover:text-white"
+            >
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user?.name || "User"}
+                  className="h-6 w-6 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 text-xs font-semibold text-black">
+                  {user?.name?.charAt(0).toUpperCase() || "U"}
+                </div>
+              )}
+              <span className="hidden sm:inline">{user?.name?.split(" ")[0] || "User"}</span>
+            </Link>
+            <Button 
+              variant="ghost" 
+              onClick={logout}
+              className="hidden lg:flex"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="ml-2">Logout</span>
+            </Button>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="rounded-lg p-2 transition hover:bg-white/5 md:hidden"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
 
-        <main className="flex-1 space-y-8">
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="border-t border-white/10 bg-black/40 backdrop-blur-sm md:hidden">
+            <nav className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+              <div className="flex flex-col gap-2">
+                {navLinks
+                  .filter((link) => link.label !== "Admin" || profile.role === "admin")
+                  .map((link) => (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/70 transition hover:bg-white/5 hover:text-white"
+                    >
+                      <link.icon className="h-4 w-4" />
+                      {link.label}
+                    </Link>
+                  ))}
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                  }}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/70 transition hover:bg-white/5 hover:text-white"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </div>
+            </nav>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main className="space-y-8">
           <div className="rounded-3xl border border-white/10 bg-black/40 p-6">
-            <p className="text-sm uppercase tracking-[0.3em] text-emerald-200">
-              Welcome back
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold">
-              {user?.name ?? "Member"}
-            </h1>
-            <p className="text-sm text-white/60">
-              Here&apos;s what&apos;s happening in the club today.
-            </p>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-emerald-200">
+                  Welcome back
+                </p>
+                <h1 className="mt-2 text-3xl font-semibold">
+                  {user?.name ?? "Member"}
+                </h1>
+                <p className="text-sm text-white/60">
+                  Here&apos;s what&apos;s happening in the club today.
+                </p>
+              </div>
+            </div>
           </div>
 
           <section className="grid gap-4 grid-cols-2 lg:grid-cols-3">
@@ -337,65 +370,6 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-3xl border border-white/10 bg-black/40 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.3em] text-emerald-200">
-                      Upcoming events
-                    </p>
-                    <h2 className="text-2xl font-semibold">Stay in the loop</h2>
-                  </div>
-                  <Link
-                    href="/events"
-                    className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:border-emerald-300 hover:text-white"
-                  >
-                    View events
-                  </Link>
-                </div>
-                <div className="mt-5 space-y-4">
-                  {upcomingEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
-                    >
-                      <div className="flex items-center justify-between text-xs text-white/60">
-                        <span>
-                          {formatDate(event.date, {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                          {" · "}
-                          {event.time}
-                        </span>
-                        <span className="uppercase tracking-[0.3em]">
-                          {event.type}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-base font-semibold">
-                        {event.title}
-                      </p>
-                      <p className="text-sm text-white/60">{event.summary}</p>
-                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-white/60">
-                        <span>{event.location}</span>
-                        <span>
-                          {event.attendees}/{event.capacity} seats
-                        </span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        className="mt-3 text-xs"
-                        onClick={() => handleEventRsvp(event.id)}
-                        disabled={eventStatus[event.id] === "sent"}
-                      >
-                        {eventStatus[event.id] === "sent"
-                          ? "RSVP’ed"
-                          : "RSVP now"}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               <div className="rounded-3xl border border-white/10 bg-black/40 p-6">
                 <div className="flex items-center justify-between">
                   <div>
