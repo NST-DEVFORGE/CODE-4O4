@@ -4,13 +4,9 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Public routes that don't require authentication
+  // Only home page is public - all other routes require authentication
   const publicRoutes = [
     "/",
-    "/projects",
-    "/events", 
-    "/sessions",
-    "/leaderboard",
   ];
   
   // Check if route is public
@@ -60,7 +56,13 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*",
-    "/dashboard/:path*",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };
