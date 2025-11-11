@@ -23,66 +23,7 @@ type LoginCredentials = {
   password: string;
 };
 
-const STORAGE_KEY = "nstswc-devclub-user";
-
-const credentialDirectory: Array<
-  LoginCredentials & {
-    profile: ClubUser;
-  }
-> = [
-  {
-    username: "geetansh",
-    password: "admin123",
-    profile: {
-      id: "geetansh-1",
-      name: "Geetansh Goyal",
-      email: "geetansh@nstswc.com",
-      avatar: "https://avatars.githubusercontent.com/u/9919?v=4",
-      role: "admin",
-      badges: 7,
-      points: 1800,
-    },
-  },
-  {
-    username: "utsav",
-    password: "user123",
-    profile: {
-      id: "utsav-1",
-      name: "Utsav",
-      email: "utsav@nstswc.com",
-      avatar: "https://avatars.githubusercontent.com/u/22736455?v=4",
-      role: "student",
-      badges: 4,
-      points: 1200,
-    },
-  },
-  {
-    username: "user3",
-    password: "user123",
-    profile: {
-      id: "user3-1",
-      name: "User Three",
-      email: "user3@nstswc.com",
-      avatar: "https://avatars.githubusercontent.com/u/9926202?v=4",
-      role: "student",
-      badges: 2,
-      points: 800,
-    },
-  },
-  {
-    username: "user4",
-    password: "user123",
-    profile: {
-      id: "user4-1",
-      name: "User Four",
-      email: "user4@nstswc.com",
-      avatar: "https://avatars.githubusercontent.com/u/1234567?v=4",
-      role: "student",
-      badges: 1,
-      points: 600,
-    },
-  },
-];
+const STORAGE_KEY = "code404-devclub-user";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -110,11 +51,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     password,
   }: LoginCredentials): Promise<ActionResult> => {
     try {
-      // First try the API for Firebase authentication
+      // Authenticate via Firebase
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ 
+          username: username.trim().toLowerCase(), 
+          password 
+        }),
       });
 
       const result = await response.json();
@@ -123,6 +67,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(result.user);
         if (typeof window !== "undefined") {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(result.user));
+          // Set cookie for middleware authentication check
+          document.cookie = `code404-user=${encodeURIComponent(JSON.stringify(result.user))}; path=/; max-age=2592000; SameSite=Lax`;
         }
         return {
           ok: true,
@@ -131,33 +77,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      // Fallback to hardcoded credentials for demo accounts
-      const normalized = username.trim().toLowerCase();
-      const match = credentialDirectory.find(
-        (entry) => entry.username === normalized,
-      );
-
-      if (!match) {
-        return { ok: false, message: "No member found with that username." };
-      }
-
-      if (match.password !== password) {
-        return { ok: false, message: "Incorrect password. Try again." };
-      }
-
-      setUser(match.profile);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(match.profile));
-      }
-
-      return {
-        ok: true,
-        message: `Welcome back, ${match.profile.name.split(" ")[0]}!`,
-        user: match.profile,
+      // Return error from API
+      return { 
+        ok: false, 
+        message: result.message || "Login failed. Please check your credentials." 
       };
     } catch (error) {
       console.error("Login error:", error);
-      return { ok: false, message: "Login failed. Please try again." };
+      return { ok: false, message: "Network error. Please try again." };
     }
   }, []);
 
@@ -165,6 +92,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(STORAGE_KEY);
+      // Remove cookie
+      document.cookie = "code404-user=; path=/; max-age=0";
     }
   }, []);
 

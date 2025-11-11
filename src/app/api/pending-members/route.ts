@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb, serverTimestamp } from "@/lib/firebase/admin";
+import { sendCredentialsEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -87,10 +88,25 @@ export async function PATCH(request: Request) {
       // Create a unique user ID
       userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      // Generate username and password from member's name
+      // Generate username and password with unique pattern
       const firstName = (memberData?.name || "member").split(" ")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+      const lastName = (memberData?.name || "").split(" ")[1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "";
+      
       username = firstName;
-      password = `${firstName}123`;
+      
+      // Generate unique password using different patterns
+      const patterns = [
+        `${firstName}@123`,
+        `${firstName}!123`,
+        `${firstName}#123`,
+        `${firstName}@${lastName}`,
+        `${firstName}!${lastName}`,
+        `${firstName}_${Math.floor(Math.random() * 1000)}`,
+      ];
+      
+      // Use userId to consistently pick a pattern
+      const patternIndex = userId.charCodeAt(5) % patterns.length;
+      password = patterns[patternIndex] || `${firstName}@123`;
       
       // Add to members collection
       await db.collection("members").doc(userId).set({
@@ -112,10 +128,33 @@ export async function PATCH(request: Request) {
         approvedBy: adminId || "admin",
         username,
         password,
+        credentialsUpdated: new Date().toISOString(),
       });
       
       console.log("✅ Added to members collection with ID:", userId);
       console.log(`🔑 Credentials: ${username} / ${password}`);
+      
+      // Send welcome email with credentials
+      if (memberData?.email) {
+        try {
+          console.log(`📧 Sending welcome email to ${memberData.email}...`);
+          const emailResult = await sendCredentialsEmail({
+            to: memberData.email,
+            name: memberData.name || "Member",
+            username: username,
+            password: password,
+          });
+          
+          if (emailResult.success) {
+            console.log(`✅ Welcome email sent successfully to ${memberData.email}`);
+          } else {
+            console.error(`❌ Failed to send welcome email: ${emailResult.error}`);
+          }
+        } catch (emailError) {
+          console.error("❌ Error sending welcome email:", emailError);
+          // Don't fail the approval if email fails
+        }
+      }
     }
     
     // Record admin decision
@@ -137,9 +176,13 @@ export async function PATCH(request: Request) {
     
     return NextResponse.json({
       ok: true,
-      message: `Member ${decision}!`,
+      message: decision === "approved" 
+        ? `Member approved! Welcome email sent to ${memberData?.email}` 
+        : `Member ${decision}!`,
       ...(userId && { userId }),
       ...(username && password && { credentials: { username, password } }),
+      ...(memberData?.name && { name: memberData.name }),
+      ...(memberData?.email && { email: memberData.email }),
     });
   } catch (error) {
     console.error("❌ Error processing member:", error);

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase/admin";
+import { sendCredentialsEmail } from "@/lib/email";
 
 // Update member credentials
 export async function PATCH(request: Request) {
   try {
-    const { memberId, username, password } = await request.json();
+    const { memberId, username, password, sendEmail = true } = await request.json();
 
     if (!memberId) {
       return NextResponse.json(
@@ -33,12 +34,25 @@ export async function PATCH(request: Request) {
       finalUsername = memberData.name.split(" ")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
     }
 
-    // Generate password from name if not provided
+    // Generate unique password from name if not provided
     let finalPassword = password;
     if (!finalPassword && memberData?.name) {
-      // Convert "Sahitya Singh" -> "sahitya123"
       const firstName = memberData.name.split(" ")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
-      finalPassword = `${firstName}123`;
+      const lastName = memberData.name.split(" ")[1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "";
+      
+      // Create more unique passwords with different patterns
+      const patterns = [
+        `${firstName}@123`,
+        `${firstName}!123`,
+        `${firstName}#123`,
+        `${firstName}@${lastName}`,
+        `${firstName}!${lastName}`,
+        `${firstName}_${Math.floor(Math.random() * 1000)}`,
+      ];
+      
+      // Use the member ID to consistently pick a pattern
+      const patternIndex = memberId.charCodeAt(0) % patterns.length;
+      finalPassword = patterns[patternIndex] || `${firstName}@123`;
     }
 
     // Update the member document
@@ -50,13 +64,33 @@ export async function PATCH(request: Request) {
 
     console.log(`✅ Updated credentials for ${memberData?.name}: ${finalUsername} / ${finalPassword}`);
 
+    // Send email with credentials if requested
+    let emailSent = false;
+    if (sendEmail && memberData?.email) {
+      try {
+        const emailResult = await sendCredentialsEmail({
+          to: memberData.email,
+          name: memberData.name,
+          username: finalUsername,
+          password: finalPassword,
+        });
+        emailSent = emailResult.success;
+        console.log(`📧 Email sent to ${memberData.email}: ${emailSent ? 'Success' : 'Failed'}`);
+      } catch (emailError) {
+        console.error("❌ Error sending email:", emailError);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
-      message: "Credentials updated successfully",
+      message: emailSent 
+        ? "Credentials updated and email sent successfully" 
+        : "Credentials updated successfully",
       credentials: {
         username: finalUsername,
         password: finalPassword,
       },
+      emailSent,
     });
   } catch (error) {
     console.error("❌ Error updating credentials:", error);

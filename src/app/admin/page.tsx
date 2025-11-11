@@ -44,6 +44,7 @@ const AdminPage = () => {
   const [activeTab, setActiveTab] = useState<"members" | "projects">("members");
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
   const [credentials, setCredentials] = useState<{ username: string; password: string; name: string; email: string } | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
 
   // Check if user is admin
   useEffect(() => {
@@ -218,6 +219,35 @@ const AdminPage = () => {
     alert("⏸️  On hold (will implement status change)");
   };
 
+  const handleRegenerateAllCredentials = async () => {
+    if (!confirm("⚠️ This will regenerate credentials for ALL members and send them emails with their new login details. Continue?")) {
+      return;
+    }
+
+    setRegenerating(true);
+    try {
+      const response = await fetch("/api/admin/regenerate-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sendEmails: true }),
+      });
+
+      const result = await response.json();
+      
+      if (result.ok) {
+        alert(`✅ Success!\n\nUpdated: ${result.data.totalUpdated} members\nEmails sent: ${result.data.emailsSent}\nEmails failed: ${result.data.emailsFailed}`);
+        console.log("Regenerated credentials:", result.data.members);
+      } else {
+        alert(`❌ Failed: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("❌ Error regenerating credentials:", error);
+      alert("Failed to regenerate credentials. Check console for details.");
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   return (
   <PageContainer>
     <PageIntro
@@ -225,12 +255,21 @@ const AdminPage = () => {
       title="Member approvals & reviews"
       description="Track pending join requests, review interest tags, and approve contributors once you've met them."
       actions={
-        <Link
-          href="/"
-          className="rounded-full border border-white/10 px-5 py-2 text-sm text-white/70 transition hover:border-emerald-300/60 hover:text-white"
-        >
-          ← Back home
-        </Link>
+        <div className="flex gap-3">
+          <button
+            onClick={handleRegenerateAllCredentials}
+            disabled={regenerating}
+            className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-5 py-2 text-sm text-emerald-400 transition hover:border-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {regenerating ? "🔄 Regenerating..." : "🔑 Regenerate All Credentials"}
+          </button>
+          <Link
+            href="/"
+            className="rounded-full border border-white/10 px-5 py-2 text-sm text-white/70 transition hover:border-emerald-300/60 hover:text-white"
+          >
+            ← Back home
+          </Link>
+        </div>
       }
     />
 

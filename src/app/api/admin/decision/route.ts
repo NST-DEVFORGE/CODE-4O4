@@ -1,11 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getDb, serverTimestamp } from "@/lib/firebase/admin";
+import { verifyAdminAuth } from "@/lib/auth-utils";
 
 // Force Node.js runtime for firebase-admin
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Verify admin authentication
+    const auth = await verifyAdminAuth(request);
+    if (!auth.isAdmin) {
+      return NextResponse.json(
+        { ok: false, message: auth.error || "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { id, decision } = (await request.json()) as {
       id?: string;
       decision?: "approve" | "hold" | string;
@@ -22,6 +32,7 @@ export async function POST(request: Request) {
     await db.collection("adminDecisions").add({
       requestId: id,
       decision,
+      actedBy: auth.user?.name || "Admin",
       actedAt: serverTimestamp(),
     });
 
