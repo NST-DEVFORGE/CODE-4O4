@@ -113,19 +113,21 @@ const AdminPage = () => {
       
       if (result.ok) {
         const userId = result.userId || memberId;
-        const tempPassword = result.tempPassword || "Welcome@123";
+        const credentials = result.credentials || {};
+        const username = credentials.username || "newmember";
+        const password = credentials.password || "member123";
         
         // Show credentials modal
         setCredentials({
-          userId,
-          password: tempPassword,
+          userId: username,
+          password: password,
           name: memberName,
           email: memberEmail,
         });
         setShowCredentialsModal(true);
         
         // Copy credentials to clipboard
-        const credentialsText = `User ID: ${userId}\nTemporary Password: ${tempPassword}`;
+        const credentialsText = `Username: ${username}\nPassword: ${password}`;
         navigator.clipboard.writeText(credentialsText).then(() => {
           console.log("📋 Credentials copied to clipboard");
         });
@@ -460,12 +462,12 @@ const AdminPage = () => {
             </div>
 
             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4">
-              <p className="text-xs text-emerald-400/70 mb-1">User ID</p>
+              <p className="text-xs text-emerald-400/70 mb-1">Username</p>
               <p className="text-emerald-300 font-mono text-sm">{credentials.userId}</p>
             </div>
 
             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4">
-              <p className="text-xs text-emerald-400/70 mb-1">Temporary Password</p>
+              <p className="text-xs text-emerald-400/70 mb-1">Password</p>
               <p className="text-emerald-300 font-mono text-sm">{credentials.password}</p>
             </div>
           </div>
@@ -473,7 +475,7 @@ const AdminPage = () => {
           <div className="space-y-3">
             <button
               onClick={() => {
-                const text = `User ID: ${credentials.userId}\nTemporary Password: ${credentials.password}`;
+                const text = `Username: ${credentials.userId}\nPassword: ${credentials.password}`;
                 navigator.clipboard.writeText(text);
                 alert("📋 Credentials copied to clipboard!");
               }}

@@ -87,11 +87,6 @@ export const LoginModal = ({ open, onClose }: ModalProps) => {
                 <Shield className="h-4 w-4 text-emerald-300" />
                 Username + password stored securely in the club vault.
               </div>
-              <p className="mt-3 text-xs text-white/60">
-                Demo accounts: <strong>admin</strong> / <strong>admin123</strong>,{" "}
-                <strong>mentor</strong> / <strong>mentor123</strong>,{" "}
-                <strong>member</strong> / <strong>member123</strong>
-              </p>
             </div>
 
             {user ? (

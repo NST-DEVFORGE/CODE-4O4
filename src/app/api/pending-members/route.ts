@@ -80,14 +80,17 @@ export async function PATCH(request: Request) {
     const memberData = pendingMemberDoc.data();
     
     let userId = null;
-    let tempPassword = null;
+    let username = null;
+    let password = null;
     
     if (decision === "approved") {
       // Create a unique user ID
       userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      // Generate a temporary password
-      tempPassword = `Club@${Math.random().toString(36).substr(2, 8)}`;
+      // Generate username and password from member's name
+      const firstName = (memberData?.name || "member").split(" ")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+      username = firstName;
+      password = `${firstName}123`;
       
       // Add to members collection
       await db.collection("members").doc(userId).set({
@@ -107,10 +110,12 @@ export async function PATCH(request: Request) {
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${memberData?.email || userId}`,
         joinedAt: serverTimestamp(),
         approvedBy: adminId || "admin",
-        tempPassword, // Store temporarily for admin to send
+        username,
+        password,
       });
       
       console.log("✅ Added to members collection with ID:", userId);
+      console.log(`🔑 Credentials: ${username} / ${password}`);
     }
     
     // Record admin decision
@@ -134,7 +139,7 @@ export async function PATCH(request: Request) {
       ok: true,
       message: `Member ${decision}!`,
       ...(userId && { userId }),
-      ...(tempPassword && { tempPassword }),
+      ...(username && password && { credentials: { username, password } }),
     });
   } catch (error) {
     console.error("❌ Error processing member:", error);
