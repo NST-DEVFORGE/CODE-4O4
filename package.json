@@ -11,6 +11,7 @@
     "seed:sessions": "node scripts/seed-sessions.js",
     "seed:all": "npm run seed:events && npm run seed:sessions",
     "test:notifications": "node scripts/test-notifications.js",
+    "notify": "node scripts/send-test-notification.js",
     "monitor:usage": "node scripts/monitor-usage.js"
   },
   "dependencies": {
