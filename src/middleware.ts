@@ -25,20 +25,24 @@ export function middleware(request: NextRequest) {
   let user = null;
   if (userCookie) {
     try {
-      user = JSON.parse(userCookie.value);
+      // Decode the URL-encoded cookie value before parsing
+      const decodedValue = decodeURIComponent(userCookie.value);
+      user = JSON.parse(decodedValue);
     } catch (error) {
       console.error("Failed to parse user cookie:", error);
       // Invalid cookie, clear it and redirect to home if accessing protected route
-      const response = NextResponse.redirect(new URL("/", request.url));
-      response.cookies.delete("code404-user");
-      return response;
+      if (!isPublicRoute) {
+        const response = NextResponse.redirect(new URL("/", request.url));
+        response.cookies.delete("code404-user");
+        return response;
+      }
     }
   }
   
-  // Protect admin routes
+  // Protect admin routes - allow both admin and mentor roles
   if (pathname.startsWith("/admin")) {
-    if (!user || user.role !== "admin") {
-      console.log(`🔒 Non-admin user trying to access ${pathname}, redirecting to dashboard`);
+    if (!user || (user.role !== "admin" && user.role !== "mentor")) {
+      console.log(`🔒 Non-admin/mentor user trying to access ${pathname}, redirecting to dashboard`);
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
