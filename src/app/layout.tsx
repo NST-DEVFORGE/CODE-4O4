@@ -2,10 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
-import { NotificationPrompt } from "@/components/notifications/notification-prompt";
-import { NotificationInitializer } from "@/components/notifications/notification-initializer";
-
-import NotificationDebugWrapper from "@/components/notifications/notification-debug-wrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -86,9 +82,6 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
-          <NotificationPrompt />
-          <NotificationInitializer />
-          <NotificationDebugWrapper />
         </AuthProvider>
       </body>
     </html>

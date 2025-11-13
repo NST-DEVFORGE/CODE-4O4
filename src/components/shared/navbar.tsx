@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import NotificationBell from "@/components/notifications/notification-bell";
 import { Menu, X, Home, Folder, Calendar, BookOpen, Trophy, Shield, LogOut, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -86,7 +85,7 @@ export default function Navbar() {
 
         {/* Desktop Right Side */}
         <div className="flex items-center gap-3">
-          <NotificationBell />
+          {/* Notification bell removed while notification system is disabled */}
           <button 
             onClick={handleLogout}
             className="flex items-center gap-2 px-3 py-2 rounded-lg hover:text-cyan-400 hover:bg-white/5 transition-all"
@@ -133,10 +132,8 @@ export default function Navbar() {
           CODE 4O4
         </Link>
 
-        {/* Notification Bell - Right */}
-        <div className="flex items-center">
-          <NotificationBell />
-        </div>
+        {/* Notification Bell removed while notification system is disabled */}
+        <div className="flex items-center" />
       </div>
 
       {/* Mobile Sidebar Menu */}
