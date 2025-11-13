@@ -67,6 +67,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    // Exclude API, Next internals, favicon, and public PWA/static assets so they
+    // can be fetched directly (manifest.json, sw.js, icons, etc.).
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|icons|icon-).*)",
   ],
 };
