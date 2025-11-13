@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import dynamic from 'next/dynamic';
+
+const SwRegister = dynamic(() => import('@/components/sw-register'), { ssr: false });
 import { AuthProvider } from "@/context/auth-context";
 
 const geistSans = Geist({
@@ -89,6 +92,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
+          {/* Register Service Worker early to avoid stale SW/cache causing unresponsive UI */}
+          {/* Client component does nothing visible; it just registers the SW on mount */}
+          {/* eslint-disable-next-line @next/next/no-async-client-component */}
+          {/* @ts-ignore */}
+          <script suppressHydrationWarning={true} />
+          {/* Import client component */}
+          {/* The component is a small client-only mount to register the SW */}
+          {
+            // Render the SW register component as a client boundary
+          }
+          <SwRegister />
           {children}
         </AuthProvider>
       </body>

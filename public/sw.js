@@ -2,6 +2,17 @@
    Handles 'push' and 'notificationclick' events for Web Push.
 */
 /* eslint-disable no-restricted-globals */
+self.addEventListener('install', (event) => {
+  // Activate immediately so we can claim clients and avoid stale caches
+  // Note: clients may get refreshed when controllerchange fires on the page
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  // Take control of all pages under scope immediately
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', (event) => {
   try {
     const payload = event.data ? event.data.json() : {};
@@ -87,14 +98,39 @@ self.addEventListener('pushsubscriptionchange', (event) => {
 // Basic fetch handler so browsers consider this a "network-capable" service worker.
 // This keeps the implementation simple: forward requests to network by default.
 self.addEventListener('fetch', (event) => {
-  try {
-    // We do not try to intercept navigation or implement caching here —
-    // just ensure we have a fetch handler so the PWA installability checks pass.
-    event.respondWith(fetch(event.request));
-  } catch (err) {
-    // If fetch fails (offline), just let the request fail silently.
-    console.warn('Fetch handler error in SW', err);
+  const req = event.request;
+  // Only handle GET requests
+  if (req.method !== 'GET') return;
+
+  // For navigation requests (page loads), use a network-first strategy with a short timeout
+  if (req.mode === 'navigate') {
+    const networkFirst = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
+        const response = await fetch(req, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (err) {
+        // If network fails/timeout, fall back to cached document if any, otherwise try network again
+        try {
+          const cached = await caches.match(req);
+          if (cached) return cached;
+        } catch (e) {
+          // ignore
+        }
+        return fetch(req).catch(() => new Response('Offline', { status: 503, statusText: 'Offline' }));
+      }
+    };
+
+    event.respondWith(networkFirst());
+    return;
   }
+
+  // For other GET requests, prefer network but fall back to cache
+  event.respondWith(
+    fetch(req).catch(() => caches.match(req)).catch(() => fetch(req))
+  );
 });
 
 // Allow clients to trigger a skipWaiting to activate this worker immediately.
