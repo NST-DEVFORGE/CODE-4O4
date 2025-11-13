@@ -75,7 +75,7 @@ async function testNotifications() {
     const message = {
       notification: {
         title: '🧪 Test Notification',
-        body: 'This is a test notification from the NST Dev Club portal',
+    body: 'This is a test notification from CODE 4O4',
       },
       data: {
         url: '/dashboard',

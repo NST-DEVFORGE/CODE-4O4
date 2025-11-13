@@ -50,7 +50,7 @@ export const PageContainer = ({ children }: { children: ReactNode }) => {
       <div className="sticky top-0 z-30 border-b border-white/5 bg-[#010107]/80 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/" className="text-sm uppercase tracking-[0.4em] text-white/70 hover:text-cyan-400 transition-colors">
-            CODE 4O4 Dev Club
+            CODE 4O4
           </Link>
           <div className="flex flex-wrap items-center gap-3 text-sm text-white/70">
             {navigationLinks.map(

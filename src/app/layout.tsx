@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CODE 4O4 Dev Club · Build, Learn, Grow",
+  title: "CODE 4O4 · Build, Learn, Grow",
   description:
-    "An immersive developer club experience powered by Firebase, collaborative projects, live events, and a gamified member portal.",
-  metadataBase: new URL("https://devclub.preview"),
+    "An immersive developer experience powered by Firebase, collaborative projects, live events, and a gamified member portal.",
+  metadataBase: new URL("https://code404.preview"),
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -38,17 +38,17 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "CODE 4O4 Dev Club",
-    title: "CODE 4O4 Dev Club · Build, Learn, Grow",
+    siteName: "CODE 4O4",
+    title: "CODE 4O4 · Build, Learn, Grow",
     description:
-      "Build, Learn, and Grow with the NST Software Development Club",
+      "Build, Learn, and Grow with CODE 4O4",
     images: [{ url: "/icon-512x512.svg", width: 512, height: 512 }],
   },
   twitter: {
     card: "summary",
-    title: "CODE 4O4 Dev Club",
+    title: "CODE 4O4",
     description:
-      "Build, Learn, and Grow with the NST Software Development Club",
+      "Build, Learn, and Grow with CODE 4O4",
     images: ["/icon-512x512.svg"],
   },
 };

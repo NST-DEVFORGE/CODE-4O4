@@ -1,0 +1,24 @@
+name: WebPush - process schedules
+
+on:
+  schedule:
+    - cron: '*/1 * * * *' # every minute
+
+jobs:
+  process-schedules:
+    runs-on: ubuntu-latest
+    # Expose required values into the job env so linters and the runner
+    # can validate context access more reliably. Store private values in
+    # repository/organization Secrets (recommended) and reference them here.
+    env:
+      WEBAPP_URL: ${{ secrets.WEBAPP_URL }}
+      WEBPUSH_SEND_SECRET: ${{ secrets.WEBPUSH_SEND_SECRET }}
+    steps:
+      - name: Call schedule processor
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ env.WEBAPP_URL }}/api/webpush/process-schedules
+          method: POST
+          headers: |
+            x-webpush-secret: ${{ env.WEBPUSH_SEND_SECRET }}
+          body: '{}'

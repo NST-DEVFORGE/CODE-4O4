@@ -34,9 +34,9 @@ async function sendCredentialsEmail({ to, name, username, password }) {
   const transporter = createTransporter();
   
   const mailOptions = {
-    from: `"CODE 4O4 Dev Club" <${process.env.SMTP_USER}>`,
+    from: `"CODE 4O4" <${process.env.SMTP_USER}>`,
     to,
-    subject: '🎉 CODE 4O4 Dev Club - Your Login Credentials',
+    subject: '🎉 CODE 4O4 - Your Login Credentials',
     html: `
       <!DOCTYPE html>
       <html>
@@ -114,12 +114,12 @@ async function sendCredentialsEmail({ to, name, username, password }) {
       </head>
       <body>
         <div class="header">
-          <h1>🎉 CODE 4O4 Dev Club</h1>
+          <h1>🎉 CODE 4O4</h1>
         </div>
         <div class="content">
           <p>Hi <strong>${name}</strong>,</p>
           
-          <p>Here are your login credentials for the CODE 4O4 Dev Club portal:</p>
+          <p>Here are your login credentials for the CODE 4O4 portal:</p>
           
           <div class="credentials-box">
             <h2 style="margin-top: 0; color: #667eea;">Your Login Credentials</h2>
@@ -159,34 +159,34 @@ async function sendCredentialsEmail({ to, name, username, password }) {
           
           <p style="margin-top: 30px;">
             Best regards,<br>
-            <strong>CODE 4O4 Dev Club Team</strong>
+            <strong>CODE 4O4 Team</strong>
           </p>
         </div>
         
         <div class="footer">
           <p>This is an automated email. Please do not reply to this message.</p>
-          <p>&copy; ${new Date().getFullYear()} CODE 4O4 Dev Club. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} CODE 4O4. All rights reserved.</p>
         </div>
       </body>
       </html>
     `,
     text: `
-CODE 4O4 Dev Club - Your Login Credentials
+  CODE 4O4 - Your Login Credentials
 
-Hi ${name},
+  Hi ${name},
 
-Here are your login credentials for the CODE 4O4 Dev Club portal:
+  Here are your login credentials for the CODE 4O4 portal:
 
-Username: ${username}
-Password: ${password}
+  Username: ${username}
+  Password: ${password}
 
-Login at: ${process.env.NEXT_PUBLIC_APP_URL || 'https://website-drab-ten-27.vercel.app'}
+  Login at: ${process.env.NEXT_PUBLIC_APP_URL || 'https://website-drab-ten-27.vercel.app'}
 
-⚠️ Security Note: Please keep your credentials secure. We recommend changing your password after logging in.
+  ⚠️ Security Note: Please keep your credentials secure. We recommend changing your password after logging in.
 
-Best regards,
-CODE 4O4 Dev Club Team
-    `,
+  Best regards,
+  CODE 4O4 Team
+      `,
   };
 
   const info = await transporter.sendMail(mailOptions);

@@ -1,7 +1,7 @@
 {
-  "name": "CODE 4O4 Dev Club - NST-BLR",
+  "name": "CODE 4O4",
   "short_name": "CODE 4O4",
-  "description": "Official portal for NST-BLR Software Development Club. Build, Learn, Grow.",
+  "description": "Official portal for CODE 4O4. Build, Learn, Grow.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -82,10 +82,10 @@
         }
       ]
     },
-    {
+      {
       "name": "Projects",
       "short_name": "Projects",
-      "description": "Browse club projects",
+      "description": "Browse projects",
       "url": "/projects",
       "icons": [
         {

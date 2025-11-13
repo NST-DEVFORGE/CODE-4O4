@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { getFirebaseApp } from "@/lib/firebase/client";
 import { getStorage } from "firebase/storage";
+import WebPushSubscribeButton from '@/components/webpush/subscribe-button';
 
 export default function FirebaseTestPage() {
   const [logs, setLogs] = useState<string[]>([]);
@@ -80,6 +81,40 @@ export default function FirebaseTestPage() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 p-6">
+          <h2 className="mb-4 text-xl font-semibold">Web Push (dev-only)</h2>
+          <p className="mb-4 text-sm text-white/70">Use the controls below to register, subscribe and send a test Web Push notification. Requires VAPID env vars and `WEBPUSH_SEND_SECRET` for sending.</p>
+          <WebPushSubscribeButton />
+
+          <div className="mt-4">
+            <h3 className="mb-2 text-lg font-medium">Custom payload (JSON)</h3>
+            <textarea id="webpush-payload" defaultValue={JSON.stringify({ title: 'Hello', body: 'Custom test' }, null, 2)} className="w-full rounded p-2 bg-slate-900 font-mono text-sm h-32" />
+            <div className="flex gap-3 mt-2">
+              <button onClick={async () => {
+                const ta = document.getElementById('webpush-payload') as HTMLTextAreaElement | null;
+                if (!ta) return;
+                let payload;
+                try { payload = JSON.parse(ta.value); } catch (err) { alert('Invalid JSON'); return; }
+                const secret = prompt('Enter WEBPUSH_SEND_SECRET to send:');
+                if (!secret) return;
+                try {
+                  const res = await fetch('/api/webpush/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-webpush-secret': secret },
+                    body: JSON.stringify({ payload }),
+                  });
+                  const json = await res.json();
+                  console.log('send result', json);
+                  alert('Send requested — check console for results');
+                } catch (err) {
+                  console.error(err);
+                  alert('Send failed');
+                }
+              }} className="rounded bg-violet-600 px-4 py-2 text-white">Send custom</button>
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 p-6">

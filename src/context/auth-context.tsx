@@ -24,7 +24,7 @@ type LoginCredentials = {
   password: string;
 };
 
-const STORAGE_KEY = "code404-devclub-user";
+const STORAGE_KEY = "code404-user";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -109,6 +109,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Debug: Verify cookie was set
           console.log('🍪 Cookie set:', document.cookie.includes('code404-user') ? 'Success' : 'Failed');
         }
+        // after successful login, attempt to register service worker and subscribe for push
+        try {
+          // Dynamically import webpush helpers to avoid SSR issues
+          const webpush = await import('@/lib/webpush');
+          // Register service worker (non-blocking)
+          webpush.registerServiceWorker().then(() => {
+            // Try to subscribe for push with the logged-in user's id
+            webpush.subscribeForPush(result.user.id).then((sub) => {
+              if (sub) console.log('🔔 Subscribed for web-push during login');
+            }).catch((e) => console.warn('Subscribe error after login', e));
+          }).catch((e) => console.warn('SW register error after login', e));
+        } catch (err) {
+          console.warn('Webpush helper not available', err);
+        }
+
         return {
           ok: true,
           message: result.message,
