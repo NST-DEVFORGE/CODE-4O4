@@ -172,7 +172,17 @@ export default function Navbar() {
         </Link>
 
         {/* Notification Bell removed while notification system is disabled */}
-        <div className="flex items-center" />
+        <div className="flex items-center">
+          {canInstall && (
+            <button
+              onClick={promptInstall}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-500 text-black font-medium hover:opacity-90 transition-all"
+              aria-label="Install app"
+            >
+              Install
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Mobile Sidebar Menu */}

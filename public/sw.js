@@ -46,6 +46,19 @@ self.addEventListener('pushsubscriptionchange', (event) => {
   console.log('pushsubscriptionchange', event);
 });
 
+// Basic fetch handler so browsers consider this a "network-capable" service worker.
+// This keeps the implementation simple: forward requests to network by default.
+self.addEventListener('fetch', (event) => {
+  try {
+    // We do not try to intercept navigation or implement caching here —
+    // just ensure we have a fetch handler so the PWA installability checks pass.
+    event.respondWith(fetch(event.request));
+  } catch (err) {
+    // If fetch fails (offline), just let the request fail silently.
+    console.warn('Fetch handler error in SW', err);
+  }
+});
+
 // Allow clients to trigger a skipWaiting to activate this worker immediately.
 self.addEventListener('message', (event) => {
   try {
