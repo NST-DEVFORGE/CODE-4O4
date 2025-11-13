@@ -152,23 +152,23 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile: Top Bar with Menu and Notification */}
-      <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-black/95 backdrop-blur-sm border-b border-white/10">
-        {/* Menu Button - Left */}
+      {/* Mobile: Top Bar with Menu and Notification (compact) */}
+      <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-3 py-2 bg-black/95 backdrop-blur-sm border-b border-white/10">
+        {/* Menu Button - Left (smaller) */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          className="p-2 rounded-md hover:bg-white/8 transition-colors"
           aria-label="Toggle menu"
         >
-          <Menu className="w-6 h-6 text-white" />
+          <Menu className="w-5 h-5 text-white" />
         </button>
 
-        {/* Logo - Center */}
+        {/* Centered compact logo */}
         <Link 
           href="/" 
-          className="tracking-[0.3em] font-semibold text-xs text-white hover:text-cyan-400 transition-colors"
+          className="tracking-[0.2em] font-semibold text-xs text-white hover:text-cyan-400 transition-colors"
         >
-          CODE 4O4
+          C404
         </Link>
 
         {/* Notification Bell removed while notification system is disabled */}
@@ -185,7 +185,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Sidebar Menu */}
+      {/* Mobile Sidebar Menu (compact icon-only) */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
@@ -195,86 +195,63 @@ export default function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
             />
 
-            {/* Sidebar - Slides from LEFT */}
+            {/* Narrow Sidebar - Slides from LEFT (icon-only) */}
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-gray-900 border-r border-white/10 z-50 lg:hidden overflow-y-auto shadow-2xl"
+              className="fixed top-0 left-0 h-full w-20 bg-gray-900 border-r border-white/10 z-50 lg:hidden flex flex-col items-center py-4"
             >
-              <div className="flex flex-col h-full">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-white/10">
-                  <h2 className="text-lg font-semibold text-white">Menu</h2>
-                  <button
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
+              {/* Close Button (top) */}
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 rounded-md hover:bg-white/8 mb-3"
+                aria-label="Close menu"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
 
-                {/* User Profile */}
-                <Link
-                  href="/dashboard/profile"
-                  className="flex items-center gap-3 p-6 border-b border-white/10 hover:bg-white/5 transition-colors"
-                >
+              {/* Nav icons stacked */}
+              <nav className="flex-1 flex flex-col items-center gap-2 mt-2">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.path}
+                      title={item.name}
+                      className={`flex items-center justify-center w-12 h-12 rounded-lg transition-all ${
+                        isActive(item.path)
+                          ? "bg-cyan-400/10 text-cyan-400"
+                          : "text-gray-300 hover:bg-white/5"
+                      }`}
+                      aria-label={item.name}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* Profile + Logout at bottom */}
+              <div className="mt-auto mb-4 flex flex-col items-center gap-2">
+                <Link href="/dashboard/profile" className="block">
                   {user?.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt={user.name || "avatar"}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
+                    <img src={user.avatar} alt={user.name || "avatar"} className="w-10 h-10 rounded-full object-cover" />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-lg font-semibold">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-sm font-semibold text-black">
                       {user?.name?.charAt(0).toUpperCase() || "U"}
                     </div>
                   )}
-                  <div className="flex-1">
-                    <p className="font-semibold text-white">{user?.name || "User"}</p>
-                    <p className="text-xs text-gray-400 capitalize">{user?.role || "Member"}</p>
-                  </div>
-                  <User className="w-4 h-4 text-gray-400" />
                 </Link>
 
-                {/* Navigation Links */}
-                <nav className="flex-1 p-4">
-                  <ul className="space-y-1">
-                    {navItems.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <li key={item.name}>
-                          <Link
-                            href={item.path}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                              isActive(item.path)
-                                ? "text-cyan-400 bg-cyan-400/10 font-semibold" 
-                                : "text-gray-300 hover:text-white hover:bg-white/5"
-                            }`}
-                          >
-                            <Icon className="w-5 h-5" />
-                            <span>{item.name}</span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </nav>
-
-                {/* Logout Button */}
-                <div className="p-4 border-t border-white/10">
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg text-red-400 hover:bg-red-400/10 transition-all font-medium"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    <span>Logout</span>
-                  </button>
-                </div>
+                <button onClick={handleLogout} className="p-2 rounded-md text-red-400 hover:bg-red-400/10">
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
             </motion.div>
           </>
