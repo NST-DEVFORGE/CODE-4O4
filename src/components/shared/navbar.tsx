@@ -185,6 +185,15 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* Floating right-edge hamburger (visible on small screens) */}
+      <button
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        className="fixed right-4 top-4 z-50 lg:hidden p-3 rounded-full border border-white/10 bg-black/60 hover:bg-white/5 transition-colors"
+        aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+      >
+        <Menu className="w-5 h-5 text-white" />
+      </button>
+
       {/* Mobile Sidebar Menu (compact icon-only) */}
       <AnimatePresence>
         {isMobileMenuOpen && (

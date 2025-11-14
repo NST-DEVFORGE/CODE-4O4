@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
 import { Plus, Settings } from "lucide-react";
+import { getFirebaseApp, hasFirebaseConfig } from "@/lib/firebase/client";
+import { getFirestore, collection, onSnapshot, query } from "firebase/firestore";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageIntro } from "@/components/shared/page-intro";
 import { useAuth } from "@/context/auth-context";
@@ -54,8 +56,28 @@ const ProjectsPage = () => {
     };
 
     fetchProjects();
-    // Removed auto-refresh to save Firebase reads
-    // Users can refresh page manually to see project updates
+
+    // If Firebase is configured, set up a real-time listener to auto-update projects (members count)
+    if (hasFirebaseConfig) {
+      try {
+        const app = getFirebaseApp();
+        if (app) {
+          const db = getFirestore(app);
+          const q = query(collection(db, "projects"));
+          const unsubscribe = onSnapshot(q, (snapshot) => {
+            const live = snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as any) }));
+            setProjects(live as ShowcaseProject[]);
+            setLoading(false);
+          }, (err) => {
+            console.warn("Realtime projects listener error:", err);
+          });
+
+          return () => unsubscribe();
+        }
+      } catch (err) {
+        console.warn("Unable to initialize realtime projects listener", err);
+      }
+    }
   }, []);
 
   const handleJoin = async (projectId: string) => {
