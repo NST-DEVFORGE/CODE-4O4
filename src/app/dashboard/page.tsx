@@ -234,10 +234,10 @@ export default function DashboardPage() {
                       {project.description || "No description available"}
                     </p>
                     <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-white/60">
-                      {project.members && (
+                      {(project.memberCount ?? project.members) !== undefined && (
                         <span className="flex items-center gap-1">
                           <Users className="h-4 w-4" />
-                          {project.members} members
+                          {project.memberCount ?? project.members} members
                         </span>
                       )}
                       {project.status && (

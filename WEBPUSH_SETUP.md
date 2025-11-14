@@ -15,7 +15,7 @@ npx web-push generate-vapid-keys --json
 - WEBPUSH_PUBLIC_KEY (the publicKey from the generated keys)
 - WEBPUSH_PRIVATE_KEY (the privateKey from the generated keys)
 - WEBPUSH_SUBJECT (e.g., `mailto:you@example.com`)
-- WEBPUSH_SEND_SECRET (a secret value used to protect the send endpoint)
+- WEBPUSH_SEND_SECRET (a secret value used to protect the send endpoint for immediate sends)
 
 3. Endpoints
 
@@ -30,4 +30,4 @@ Use the helper at `src/lib/webpush.ts` to register the service worker (`/sw.js`)
 
 5. Testing
 
-Set `WEBPUSH_SEND_SECRET` locally then POST to `/api/webpush/send` with header `x-webpush-secret` and a payload to trigger sends.
+Set `WEBPUSH_SEND_SECRET` locally then POST to `/api/webpush/send` with header `x-webpush-secret` and a payload to trigger immediate sends. Scheduling support has been removed from this repository.

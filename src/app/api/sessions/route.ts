@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase/admin";
+import { archivePastSessions } from "@/lib/server/sessions-maintenance";
 
 // Force Node.js runtime for firebase-admin
 export const runtime = "nodejs";
@@ -13,6 +14,7 @@ export async function GET() {
     const todayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
 
     const db = getDb();
+    await archivePastSessions(db);
     const sessionsRef = db.collection("sessions");
     
     const querySnapshot = await sessionsRef
@@ -84,6 +86,7 @@ export async function POST(request: Request) {
     }
 
     // Create session document
+    const todayStr = new Date().toISOString().split('T')[0];
     const sessionData = {
       title,
       date,
@@ -95,6 +98,7 @@ export async function POST(request: Request) {
       createdBy: userId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      status: date < todayStr ? "archived" : "upcoming",
     };
 
     const sessionRef = await db.collection("sessions").add(sessionData);
@@ -172,7 +176,11 @@ export async function PUT(request: Request) {
     };
 
     if (title !== undefined) updateData.title = title;
-    if (date !== undefined) updateData.date = date;
+    if (date !== undefined) {
+      updateData.date = date;
+      const todayStr = new Date().toISOString().split('T')[0];
+      updateData.status = date < todayStr ? "archived" : "upcoming";
+    }
     if (weekday !== undefined) updateData.weekday = weekday;
     if (topics !== undefined) updateData.topics = topics;
     if (description !== undefined) updateData.description = description;

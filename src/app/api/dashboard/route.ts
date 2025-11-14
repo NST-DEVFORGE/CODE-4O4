@@ -72,6 +72,28 @@ export async function GET(request: Request) {
     });
     const userProjects = Array.from(allProjectsMap.values());
 
+    // Compute member counts for each project to avoid stale "members" fields
+    const projectIds = userProjects.map((project) => project.id);
+    const memberCounts = new Map<string, number>();
+    await Promise.all(
+      projectIds.map(async (projectId) => {
+        try {
+          const snap = await db
+            .collection("projectMembers")
+            .where("projectId", "==", projectId)
+            .get();
+          memberCounts.set(projectId, snap.size);
+        } catch (err) {
+          console.warn("⚠️ Failed to count members for project", projectId, err);
+          memberCounts.set(projectId, 0);
+        }
+      }),
+    );
+    const projectsWithCounts = userProjects.map((project) => ({
+      ...project,
+      memberCount: memberCounts.get(project.id) ?? project.members ?? 0,
+    }));
+
     // Get upcoming sessions (next 5)
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -114,7 +136,7 @@ export async function GET(request: Request) {
           avatar: memberData?.avatar || "",
         },
         stats,
-        projects: userProjects,
+        projects: projectsWithCounts,
         sessions,
       },
     });

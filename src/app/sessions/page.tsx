@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageIntro } from "@/components/shared/page-intro";
 import { formatDate } from "@/lib/utils";
@@ -47,31 +47,74 @@ const sessionModules = [
   },
 ];
 
+const getRelativeTime = (date: Date | null) => {
+  if (!date) return "";
+  const diff = Date.now() - date.getTime();
+  if (diff < 60_000) return "just now";
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+};
+
 const SessionsPage = () => {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Check if user is admin or mentor
   const canManageSessions = user?.role === "admin" || user?.role === "mentor";
 
-  useEffect(() => {
-    const fetchSessions = async () => {
+  const fetchSessions = useCallback(
+    async (showSpinner = false) => {
+      if (showSpinner) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
       try {
-        const response = await fetch("/api/sessions");
+        const response = await fetch("/api/sessions", { cache: "no-store" });
         const result = await response.json();
         if (result.ok) {
           setSessions(result.data || []);
+          setLastUpdated(new Date());
         }
       } catch (error) {
         console.error("Error fetching sessions:", error);
       } finally {
-        setLoading(false);
+        if (showSpinner) {
+          setLoading(false);
+        } else {
+          setRefreshing(false);
+        }
       }
-    };
+    },
+    [],
+  );
 
-    fetchSessions();
-  }, []);
+  useEffect(() => {
+    fetchSessions(true);
+  }, [fetchSessions]);
+
+  useEffect(() => {
+    const id = setInterval(() => fetchSessions(false), 60_000);
+    return () => clearInterval(id);
+  }, [fetchSessions]);
+
+  const todayKey = new Date().toISOString().split("T")[0];
+  const getSessionBadge = (date: string) => {
+    if (date === todayKey) return "Today";
+    const target = new Date(date);
+    const diff = target.getTime() - Date.now();
+    if (diff <= 0) return "Completed";
+    const daysAway = Math.ceil(diff / (24 * 60 * 60 * 1000));
+    if (daysAway <= 2) return "This week";
+    return null;
+  };
 
   return (
   <PageContainer>
@@ -100,7 +143,16 @@ const SessionsPage = () => {
     />
 
     <section className="mt-10 space-y-6">
-      <h2 className="text-2xl font-semibold">Upcoming calendar</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Upcoming calendar</h2>
+        <p className="text-xs text-white/60">
+          {refreshing
+            ? "Refreshing…"
+            : lastUpdated
+              ? `Updated ${getRelativeTime(lastUpdated)}`
+              : "Auto-refresh enabled"}
+        </p>
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         {loading ? (
           <div className="col-span-full text-center text-white/60 py-12">Loading sessions...</div>
@@ -114,7 +166,14 @@ const SessionsPage = () => {
             >
               <div className="flex flex-wrap items-center justify-between text-xs uppercase tracking-[0.3em] text-white/60">
                 <span>{session.type}</span>
-                <span>{formatDate(session.date, { weekday: "long" })}</span>
+                <span className="flex items-center gap-2">
+                  {formatDate(session.date, { weekday: "long" })}
+                  {getSessionBadge(session.date) && (
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[0.6rem] font-semibold tracking-wide text-white/80">
+                      {getSessionBadge(session.date)}
+                    </span>
+                  )}
+                </span>
               </div>
               <h3 className="mt-2 text-xl font-semibold">{session.title}</h3>
               <p className="text-sm text-white/70">{session.description || session.focus || 'Workshop session'}</p>

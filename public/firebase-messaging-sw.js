@@ -22,6 +22,22 @@ firebase.initializeApp({
 // Retrieve an instance of Firebase Messaging so that it can handle background messages.
 const messaging = firebase.messaging();
 
+const broadcastNotificationToClients = (notification) => {
+  if (!self.clients || !self.clients.matchAll) return;
+  self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    clientList.forEach((client) => {
+      try {
+        client.postMessage({
+          type: 'PUSH_NOTIFICATION',
+          notification,
+        });
+      } catch (err) {
+        console.warn('[firebase-messaging-sw.js] Failed to post message to client', err);
+      }
+    });
+  }).catch((err) => console.warn('[firebase-messaging-sw.js] broadcast error', err));
+};
+
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
@@ -41,6 +57,16 @@ messaging.onBackgroundMessage((payload) => {
     actions: payload.data?.actions ? JSON.parse(payload.data.actions) : []
   };
 
+  const clientNotification = {
+    id: payload.data?.id || payload.messageId || `${payload.sentTime || Date.now()}`,
+    title: notificationTitle,
+    body: notificationOptions.body,
+    url: notificationOptions.data?.url || '/',
+    icon: notificationOptions.icon,
+    createdAt: new Date().toISOString(),
+  };
+
+  broadcastNotificationToClients(clientNotification);
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 

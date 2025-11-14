@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase/admin";
+import { archivePastSessions } from "@/lib/server/sessions-maintenance";
 
 // Force Node.js runtime for firebase-admin
 export const runtime = "nodejs";
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
       );
     }
 
+    await archivePastSessions(db);
     const sessionsRef = db.collection("sessions");
     const querySnapshot = await sessionsRef.orderBy("date", "desc").get();
 

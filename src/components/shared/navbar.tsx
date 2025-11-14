@@ -1,53 +1,100 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { Menu, X, Home, Folder, Calendar, BookOpen, Trophy, Shield, LogOut, User } from "lucide-react";
+import {
+  Menu,
+  X,
+  Home,
+  Folder,
+  Calendar,
+  BookOpen,
+  Trophy,
+  Shield,
+  LogOut,
+  UserPlus,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function Navbar() {
+const baseNavItems = [
+  { name: "Dashboard", path: "/dashboard", icon: Home, description: "Home base" },
+  { name: "Projects", path: "/projects", icon: Folder, description: "Squad builds" },
+  { name: "Events", path: "/events", icon: Calendar, description: "Live schedule" },
+  { name: "Sessions", path: "/sessions", icon: BookOpen, description: "Workshop flow" },
+  { name: "Leaderboard", path: "/leaderboard", icon: Trophy, description: "Club stats" },
+];
+
+type NavbarProps = {
+  showGuestCtas?: boolean;
+  onLogin?: () => void;
+  onJoin?: () => void;
+};
+
+export default function Navbar({ showGuestCtas = false, onLogin, onJoin }: NavbarProps = {}) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  // PWA install prompt handling
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [canInstall, setCanInstall] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    function beforeInstallHandler(e: any) {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      setDeferredPrompt(e);
+    function beforeInstallHandler(event: any) {
+      event.preventDefault();
+      setDeferredPrompt(event);
       setCanInstall(true);
     }
-    window.addEventListener('beforeinstallprompt', beforeInstallHandler as any);
-    return () => window.removeEventListener('beforeinstallprompt', beforeInstallHandler as any);
+    window.addEventListener("beforeinstallprompt", beforeInstallHandler as any);
+    return () => window.removeEventListener("beforeinstallprompt", beforeInstallHandler as any);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updateStandalone = () => {
+      const mediaMatch = typeof window.matchMedia === "function"
+        ? window.matchMedia("(display-mode: standalone)").matches
+        : false;
+      const iosStandalone = (window.navigator as any)?.standalone;
+      setIsStandalone(Boolean(mediaMatch || iosStandalone));
+    };
+    updateStandalone();
+    if (typeof window.matchMedia !== "function") {
+      return;
+    }
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const listener = () => updateStandalone();
+    mediaQuery.addEventListener
+      ? mediaQuery.addEventListener("change", listener)
+      : mediaQuery.addListener(listener);
+    document.addEventListener("visibilitychange", listener);
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener("change", listener);
+      } else if (mediaQuery.removeListener) {
+        mediaQuery.removeListener(listener);
+      }
+      document.removeEventListener("visibilitychange", listener);
+    };
   }, []);
 
   const promptInstall = async () => {
     if (!deferredPrompt) return;
     try {
       deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      // choice.outcome is 'accepted' or 'dismissed'
-      // hide the install button after choice
+      await deferredPrompt.userChoice;
       setDeferredPrompt(null);
       setCanInstall(false);
-      // You may want to record the outcome in analytics
-      console.log('PWA install choice:', choice?.outcome);
-    } catch (err) {
-      console.warn('Error prompting PWA install', err);
+    } catch (error) {
+      console.warn("Error prompting install", error);
     }
   };
 
-  // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // Prevent scroll when mobile menu is open
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -59,39 +106,50 @@ export default function Navbar() {
     };
   }, [isMobileMenuOpen]);
 
-  const navItems = [
-    { name: "Dashboard", path: "/dashboard", icon: Home },
-    { name: "Projects", path: "/projects", icon: Folder },
-    { name: "Events", path: "/events", icon: Calendar },
-    { name: "Sessions", path: "/sessions", icon: BookOpen },
-    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-  ];
+  const showInstallButton = canInstall && !isStandalone;
 
-  // Only show Admin link for admin and mentor roles
-  if (user?.role === "admin" || user?.role === "mentor") {
-    navItems.push({ name: "Admin", path: "/admin", icon: Shield });
-  }
+  const navItems = useMemo(() => {
+    if ((user?.role === "admin" || user?.role === "mentor") && isAuthenticated) {
+      return [...baseNavItems, { name: "Admin", path: "/admin", icon: Shield, description: "Crew tools" }];
+    }
+    return baseNavItems;
+  }, [user?.role, isAuthenticated]);
 
   const handleLogout = () => {
     logout();
     setIsMobileMenuOpen(false);
   };
 
-  const isActive = (path: string) => pathname === path || pathname?.startsWith(path + "/");
+  const handleLoginClick = () => {
+    if (onLogin) {
+      onLogin();
+      setIsMobileMenuOpen(false);
+    } else {
+      window.location.href = "/";
+    }
+  };
+
+  const handleJoinClick = () => {
+    if (onJoin) {
+      onJoin();
+      setIsMobileMenuOpen(false);
+    } else {
+      window.location.href = "/";
+    }
+  };
+
+  const isActive = (path: string) => pathname === path || pathname?.startsWith(`${path}/`);
 
   return (
     <>
-      {/* Desktop Navbar - Hidden on Mobile */}
-      <nav className="hidden lg:flex sticky top-0 z-40 items-center justify-between py-3 px-4 md:px-10 bg-black/95 backdrop-blur-sm text-white border-b border-white/10">
-        {/* Logo */}
-        <Link 
-          href="/" 
-          className="tracking-[0.3em] font-semibold text-xs md:text-sm hover:text-cyan-400 transition-colors flex-shrink-0"
+      <nav className="sticky top-0 z-40 hidden items-center justify-between border-b border-white/10 bg-transparent px-4 py-3 text-white backdrop-blur-sm lg:flex md:px-10">
+        <Link
+          href="/"
+          className="flex-shrink-0 font-semibold tracking-[0.3em] text-xs hover:text-cyan-400 md:text-sm"
         >
           CODE 4O4
         </Link>
 
-        {/* Desktop Navigation */}
         <ul className="flex gap-6 xl:gap-8">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -99,13 +157,13 @@ export default function Navbar() {
               <li key={item.name}>
                 <Link
                   href={item.path}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ${
+                  className={`flex items-center gap-2 rounded-lg px-3 py-2 transition ${
                     isActive(item.path)
-                      ? "text-cyan-400 bg-cyan-400/10 font-semibold" 
-                      : "text-gray-300 hover:text-white hover:bg-white/5"
+                      ? "bg-cyan-400/10 font-semibold text-cyan-400"
+                      : "text-gray-300 hover:bg-white/5 hover:text-white"
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="h-4 w-4" />
                   <span>{item.name}</span>
                 </Link>
               </li>
@@ -113,71 +171,88 @@ export default function Navbar() {
           })}
         </ul>
 
-        {/* Desktop Right Side */}
         <div className="flex items-center gap-3">
-          {canInstall && (
+          {showInstallButton && (
             <button
               onClick={promptInstall}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-500 text-black font-medium hover:opacity-90 transition-all"
+              className="rounded-full bg-gradient-to-r from-[#00f5c4] to-[#00b0ff] px-4 py-2 text-sm font-semibold text-black shadow-[0_0_25px_rgba(0,176,255,0.45)] transition hover:scale-[1.01]"
               aria-label="Install app"
             >
               Install
             </button>
           )}
-          {/* Notification bell removed while notification system is disabled */}
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:text-cyan-400 hover:bg-white/5 transition-all"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="text-sm">Logout</span>
-          </button>
-          <Link 
-            href="/dashboard/profile"
-            className="flex items-center gap-2 border border-white/20 rounded-full px-3 py-1.5 hover:border-cyan-400/50 hover:bg-white/5 transition-all"
-          >
-            {user?.avatar ? (
-              <img
-                src={user.avatar}
-                alt={user.name || "avatar"}
-                className="w-6 h-6 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-xs font-semibold">
-                {user?.name?.charAt(0).toUpperCase() || "U"}
-              </div>
-            )}
-            <span className="text-sm hidden xl:inline">{user?.name || "User"}</span>
-          </Link>
+          {isAuthenticated ? (
+            <>
+              {/* Notifications removed: feature deprecated */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-white/5 hover:text-cyan-400"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+              <Link
+                href="/dashboard/profile"
+                className="flex items-center gap-2 rounded-full border border-white/20 px-3 py-1.5 transition hover:border-cyan-400/50 hover:bg-white/5"
+              >
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user?.name || "Avatar"} className="h-6 w-6 rounded-full object-cover" />
+                ) : (
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 text-xs font-semibold">
+                    {user?.name?.charAt(0).toUpperCase() || "U"}
+                  </div>
+                )}
+                <span className="hidden text-sm xl:inline">{user?.name || "User"}</span>
+              </Link>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleLoginClick}
+                className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white/80 transition hover:border-cyan-400/60 hover:text-white"
+              >
+                Login
+              </button>
+              {showGuestCtas && (
+                <button
+                  onClick={handleJoinClick}
+                  className="rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2 text-sm font-semibold text-black shadow-lg shadow-cyan-500/40"
+                >
+                  Join
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </nav>
 
-      {/* Mobile: Top Bar with Menu and Notification (compact) */}
-      <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-3 py-2 bg-black/95 backdrop-blur-sm border-b border-white/10">
-        {/* Menu Button - Left (smaller) */}
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-transparent px-3 py-2 backdrop-blur-sm lg:hidden">
         <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-md hover:bg-white/10 transition-colors"
+          onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+          className="rounded-md p-2 text-white hover:bg-white/10"
           aria-label="Toggle menu"
         >
-          <Menu className="w-5 h-5 text-white" />
+          <Menu className="h-5 w-5" />
         </button>
-
-        {/* Centered compact logo */}
-        <Link 
-          href="/" 
-          className="tracking-[0.2em] font-semibold text-xs text-white hover:text-cyan-400 transition-colors"
-        >
+        <Link href="/" className="text-xs font-semibold tracking-[0.2em] text-white hover:text-cyan-400">
           C404
         </Link>
-
-        {/* Notification Bell removed while notification system is disabled */}
-        <div className="flex items-center">
-          {canInstall && (
+        <div className="flex items-center gap-2">
+          {isAuthenticated ? null : (
+            showGuestCtas && (
+              <button
+                onClick={handleJoinClick}
+                className="flex items-center gap-1 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/80"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Join
+              </button>
+            )
+          )}
+          {showInstallButton && (
             <button
               onClick={promptInstall}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-500 text-black font-medium hover:opacity-90 transition-all"
-              aria-label="Install app"
+              className="rounded-full bg-gradient-to-r from-[#00f5c4] to-[#00b0ff] px-3 py-1.5 text-sm font-semibold text-black shadow-[0_0_22px_rgba(0,176,255,0.35)]"
             >
               Install
             </button>
@@ -185,85 +260,133 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Floating right-edge hamburger (visible on small screens) */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="fixed right-4 top-4 z-50 lg:hidden p-3 rounded-full border border-white/10 bg-black/60 hover:bg-white/5 transition-colors"
-        aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-      >
-        <Menu className="w-5 h-5 text-white" />
-      </button>
-
-      {/* Mobile Sidebar Menu (compact icon-only) */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <>
-            {/* Backdrop */}
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl lg:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
-            />
-
-            {/* Narrow Sidebar - Slides from LEFT (icon-only) */}
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 h-full w-20 bg-gray-900 border-r border-white/10 z-50 lg:hidden flex flex-col items-center py-4"
+              initial={{ y: "12%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "12%", opacity: 0 }}
+              transition={{ type: "spring", damping: 18, stiffness: 220 }}
+              className="mx-4 mt-6 rounded-[32px] border border-white/10 bg-gradient-to-br from-[#03101b]/95 via-slate-900/80 to-[#071827]/95 p-6 text-white shadow-[0_40px_120px_rgba(3,7,17,0.75)]"
+              onClick={(event) => event.stopPropagation()}
             >
-              {/* Close Button (top) */}
-              <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 rounded-md hover:bg-white/10 mb-3"
-                aria-label="Close menu"
-              >
-                <X className="w-4 h-4 text-white" />
-              </button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.45em] text-white/60">Code 404</p>
+                  <p className="text-2xl font-semibold">
+                    {isAuthenticated && user?.name ? `Welcome back, ${user.name.split(" ")[0]}` : "Welcome"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-full border border-white/15 p-2 text-white/70 hover:text-white"
+                  aria-label="Close menu"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
 
-              {/* Nav icons stacked */}
-              <nav className="flex-1 flex flex-col items-center gap-2 mt-2">
+              <div className="mt-6 space-y-3">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link
                       key={item.name}
                       href={item.path}
-                      title={item.name}
-                      className={`flex items-center justify-center w-12 h-12 rounded-lg transition-all ${
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center justify-between rounded-2xl border px-4 py-3 transition ${
                         isActive(item.path)
-                          ? "bg-cyan-400/10 text-cyan-400"
-                          : "text-gray-300 hover:bg-white/5"
+                          ? "border-cyan-400/60 bg-cyan-400/10 text-white"
+                          : "border-white/10 bg-white/5 text-white/80 hover:border-cyan-400/40 hover:text-white"
                       }`}
-                      aria-label={item.name}
                     >
-                      <Icon className="w-5 h-5" />
+                      <div>
+                        <p className="text-sm font-semibold">{item.name}</p>
+                        <p className="text-xs text-white/60">{item.description}</p>
+                      </div>
+                      <Icon className="h-5 w-5" />
                     </Link>
                   );
                 })}
-              </nav>
+              </div>
 
-              {/* Profile + Logout at bottom */}
-              <div className="mt-auto mb-4 flex flex-col items-center gap-2">
-                <Link href="/dashboard/profile" className="block">
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt={user.name || "avatar"} className="w-10 h-10 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-sm font-semibold text-black">
-                      {user?.name?.charAt(0).toUpperCase() || "U"}
+              <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4">
+                {isAuthenticated ? (
+                  <>
+                    <div className="flex items-center gap-3">
+                      {user?.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user?.name || "User avatar"}
+                          className="h-12 w-12 rounded-2xl object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 text-lg font-semibold">
+                          {user?.name?.charAt(0).toUpperCase() || "U"}
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-base font-semibold">{user?.name || "Member"}</p>
+                        <p className="text-xs uppercase tracking-[0.4em] text-white/60">{user?.role || "student"}</p>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-white/80 hover:border-red-400/60 hover:text-red-300"
+                      >
+                        Logout
+                      </button>
                     </div>
-                  )}
-                </Link>
 
-                <button onClick={handleLogout} className="p-2 rounded-md text-red-400 hover:bg-red-400/10">
-                  <LogOut className="w-4 h-4" />
-                </button>
+                    <div className="mt-4 grid gap-3">
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3 text-sm font-semibold text-black shadow-lg shadow-cyan-500/40"
+                      >
+                        Open Dashboard
+                        <Home className="h-4 w-4" />
+                      </Link>
+                      <Link
+                        href="/projects"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center justify-between rounded-2xl border border-white/15 px-4 py-3 text-sm font-semibold text-white/80 hover:border-cyan-400/50 hover:text-white"
+                      >
+                        View Projects
+                        <Folder className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+                    <p>Join CODE 404 to unlock dashboard, projects, and weekly sessions.</p>
+                    <div className="mt-4 flex gap-2">
+                      <button
+                        onClick={handleLoginClick}
+                        className="flex-1 rounded-full border border-white/20 px-3 py-2 text-xs font-semibold text-white/80"
+                      >
+                        Login
+                      </button>
+                      {showGuestCtas && (
+                        <button
+                          onClick={handleJoinClick}
+                          className="flex-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-3 py-2 text-xs font-semibold text-black"
+                        >
+                          Join the club
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

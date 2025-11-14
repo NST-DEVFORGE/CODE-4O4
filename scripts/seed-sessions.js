@@ -52,7 +52,7 @@ const sampleSessions = [
     description: "What is HTML, hyper text, inline vs block elements, semantic tags, fun projects overview, box model.",
     location: "NST Lab 101",
     instructor: "Club Lead",
-    status: "scheduled",
+    status: "upcoming",
     topics: ["HTML", "Web Fundamentals", "Semantic Tags"]
   },
   {
@@ -63,7 +63,7 @@ const sampleSessions = [
     description: "Inline vs internal vs external CSS, structuring styles for club projects.",
     location: "NST Lab 101",
     instructor: "Club Lead",
-    status: "scheduled",
+    status: "upcoming",
     topics: ["CSS", "Styling", "Web Development"]
   },
   {
@@ -74,7 +74,7 @@ const sampleSessions = [
     description: "Classes, IDs, specificity + preference, creating shapes (circle demo).",
     location: "NST Lab 101",
     instructor: "Club Lead",
-    status: "scheduled",
+    status: "upcoming",
     topics: ["CSS", "Selectors", "Advanced Styling"]
   },
   {
@@ -85,7 +85,7 @@ const sampleSessions = [
     description: "Variables, functions, DOM manipulation, and event listeners.",
     location: "NST Lab 102",
     instructor: "Club Lead",
-    status: "scheduled",
+    status: "upcoming",
     topics: ["JavaScript", "Programming", "DOM"]
   },
   {
@@ -96,7 +96,7 @@ const sampleSessions = [
     description: "Components, props, state, and building your first React app.",
     location: "NST Lab 201",
     instructor: "Senior Member",
-    status: "scheduled",
+    status: "upcoming",
     topics: ["React", "Components", "Frontend"]
   },
   {
@@ -107,7 +107,7 @@ const sampleSessions = [
     description: "Version control basics, collaboration workflows, and best practices.",
     location: "NST Lab 101",
     instructor: "Club Lead",
-    status: "scheduled",
+    status: "upcoming",
     topics: ["Git", "Version Control", "Collaboration"]
   }
 ];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { PageContainer } from "@/components/shared/page-container";
@@ -19,6 +19,8 @@ interface Session {
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+  status?: string;
+  archivedAt?: string;
 }
 
 export default function SessionsManagePage() {
@@ -38,6 +40,23 @@ export default function SessionsManagePage() {
     location: "Online",
   });
   const [submitting, setSubmitting] = useState(false);
+  const { upcomingSessions, pastSessions } = useMemo(() => {
+    const todayKey = new Date().toISOString().split("T")[0];
+    const upcoming: Session[] = [];
+    const past: Session[] = [];
+    sessions.forEach((session) => {
+      const status = session.status || (session.date < todayKey ? "archived" : "upcoming");
+      if (status === "archived") {
+        past.push(session);
+      } else {
+        upcoming.push(session);
+      }
+    });
+    return {
+      upcomingSessions: upcoming.sort((a, b) => a.date.localeCompare(b.date)),
+      pastSessions: past.sort((a, b) => b.date.localeCompare(a.date)),
+    };
+  }, [sessions]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -166,11 +185,11 @@ export default function SessionsManagePage() {
   return (
     <PageContainer>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold">Manage Sessions</h1>
-            <p className="text-white/60 mt-2">
-              Create and manage club sessions (Admin & Mentor only)
+            <p className="mt-2 text-white/60">
+              Create workshops, update agendas, and keep the archive tidy.
             </p>
           </div>
           <Button onClick={() => handleOpenModal()} className="flex items-center gap-2">
@@ -179,77 +198,133 @@ export default function SessionsManagePage() {
           </Button>
         </div>
 
+        <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+          Past sessions automatically move to the archive after their scheduled date—no manual cleanup required.
+        </div>
+
         {loading ? (
-          <div className="text-center py-12 text-white/60">Loading sessions...</div>
-        ) : sessions.length === 0 ? (
-          <div className="text-center py-12 text-white/60">
-            No sessions found. Create your first session!
-          </div>
+          <div className="py-12 text-center text-white/60">Loading sessions...</div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="rounded-3xl border border-white/10 bg-white/5 p-6 space-y-4"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold">{session.title}</h3>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-white/60">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {session.date} ({session.weekday})
-                      </span>
-                      {session.duration && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {session.duration}
-                        </span>
+          <>
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">Upcoming sessions</h2>
+                <span className="text-sm text-white/50">
+                  {upcomingSessions.length} scheduled
+                </span>
+              </div>
+              {upcomingSessions.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 px-6 py-12 text-center text-white/60">
+                  Everything from this week has been archived. Plan the next workshop!
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {upcomingSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-semibold">{session.title}</h3>
+                          <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-white/60">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              {session.date} ({session.weekday})
+                            </span>
+                            {session.duration && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-4 w-4" />
+                                {session.duration}
+                              </span>
+                            )}
+                          </div>
+                          {session.location && (
+                            <div className="mt-1 flex items-center gap-1 text-sm text-white/60">
+                              <MapPin className="h-4 w-4" />
+                              {session.location}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleOpenModal(session)}
+                            className="rounded-lg p-2 transition hover:bg-white/10"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(session.id)}
+                            className="rounded-lg p-2 text-red-400 transition hover:bg-red-500/20"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      {session.description && (
+                        <p className="text-sm text-white/70">{session.description}</p>
+                      )}
+                      {session.topics && session.topics.length > 0 && (
+                        <div>
+                          <p className="mb-2 text-sm font-medium text-white/80">Topics:</p>
+                          <ul className="space-y-1 text-sm text-white/60">
+                            {session.topics.map((topic, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-cyan-400">•</span>
+                                {topic}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
                     </div>
-                    {session.location && (
-                      <div className="flex items-center gap-1 mt-1 text-sm text-white/60">
-                        <MapPin className="h-4 w-4" />
-                        {session.location}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleOpenModal(session)}
-                      className="p-2 rounded-lg hover:bg-white/10 transition"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(session.id)}
-                      className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 transition"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                  ))}
                 </div>
+              )}
+            </section>
 
-                {session.description && (
-                  <p className="text-sm text-white/70">{session.description}</p>
-                )}
-
-                {session.topics && session.topics.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-white/80 mb-2">Topics:</p>
-                    <ul className="space-y-1 text-sm text-white/60">
-                      {session.topics.map((topic, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-cyan-400">•</span>
-                          {topic}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+            <section className="space-y-4 border-t border-white/5 pt-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">Archived sessions</h2>
+                <span className="text-sm text-white/50">Auto-cleanup enabled</span>
               </div>
-            ))}
-          </div>
+
+              {pastSessions.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-white/10 bg-black/30 px-6 py-8 text-center text-white/60">
+                  No archived sessions yet.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pastSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className="rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white/70"
+                    >
+                      <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/40">
+                        <span>{session.date}</span>
+                        <span>Archived</span>
+                      </div>
+                      <div className="mt-2 flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-base font-semibold text-white">{session.title}</h3>
+                          <p className="text-xs text-white/60">{session.weekday}</p>
+                          {session.description && (
+                            <p className="mt-2 text-sm text-white/60">{session.description}</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleOpenModal(session)}
+                          className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-white/70 transition hover:border-cyan-400/60 hover:text-white"
+                        >
+                          Reschedule
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
         )}
       </div>
 
