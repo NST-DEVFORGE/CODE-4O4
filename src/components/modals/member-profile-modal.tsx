@@ -15,6 +15,7 @@ interface MemberProfile {
   experience?: string;
   skills?: string[];
   interests?: string[];
+  specialRole?: string;
   points?: number;
   badges?: string[];
   projectsCompleted?: number;
