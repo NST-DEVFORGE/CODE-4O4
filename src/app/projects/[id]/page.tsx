@@ -87,9 +87,9 @@ const statusMeta: Record<
   },
 };
 
-const getSessionUser = (): ClubUser | null => {
+const getSessionUser = async (): Promise<ClubUser | null> => {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("code404-user");
     if (!sessionCookie?.value) return null;
 
@@ -364,7 +364,7 @@ export default async function ProjectDetailPage({ params }: Params) {
   }
 
   const { project, members, pendingRequests, activities } = detail;
-  const sessionUser = getSessionUser();
+  const sessionUser = await getSessionUser();
   const allowManage = canManageProject(project, sessionUser);
   const allowUpdates = isTeamMember(members, project, sessionUser);
   const showRequestAccess = !allowUpdates && project.status !== "completed";
