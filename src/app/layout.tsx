@@ -69,6 +69,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="DevForge" />
         {/* Make manifest & icons explicit to help installability checks */}
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
         {/* apple-touch-icon should point to the PNG you added for best iOS support */}
   <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

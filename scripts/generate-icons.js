@@ -39,7 +39,14 @@ async function generateFromSource(source) {
     const outName = `app-icon-${s}.png`;
     const outPath = path.join(publicDir, outName);
     try {
-      await sharp(source).resize(s, s, { fit: 'cover' }).png({ quality: 90 }).toFile(outPath);
+      // If the source is the same as the output we will write to a temp file then rename
+      if (path.resolve(source) === path.resolve(outPath)) {
+        const tmpPath = outPath + '.tmp';
+        await sharp(source).resize(s, s, { fit: 'cover' }).png({ quality: 90 }).toFile(tmpPath);
+        fs.renameSync(tmpPath, outPath);
+      } else {
+        await sharp(source).resize(s, s, { fit: 'cover' }).png({ quality: 90 }).toFile(outPath);
+      }
       console.log('✅', outName);
     } catch (err) {
       console.error('Failed to write', outName, err);
@@ -65,6 +72,13 @@ async function generateFromSource(source) {
   try {
     await sharp(source).resize(512, 512).png().toFile(path.join(publicDir, 'maskable-icon-512.png'));
     console.log('✅ maskable-icon-512.png');
+  } catch (e) {}
+
+  // Create android-chrome names too
+  try {
+    await sharp(source).resize(192, 192).png().toFile(path.join(publicDir, 'android-chrome-192x192.png'));
+    await sharp(source).resize(512, 512).png().toFile(path.join(publicDir, 'android-chrome-512x512.png'));
+    console.log('✅ android-chrome-192x192.png, android-chrome-512x512.png');
   } catch (e) {}
 
   console.log('\nAll icons written to public/. Commit them and redeploy.');

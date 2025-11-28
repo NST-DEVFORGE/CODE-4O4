@@ -14,7 +14,10 @@
     "notify": "node scripts/send-test-notification.js",
     "check:tokens": "node scripts/check-fcm-tokens.js",
     "monitor:usage": "node scripts/monitor-usage.js",
-    "slack:send": "node scripts/send-slack-message.js"
+    "slack:send": "node scripts/send-slack-message.js",
+    "generate-icons": "node scripts/generate-icons.js",
+    "generate-icons:from-source": "node scripts/generate-icons.js public/devforge-source.png",
+    "postinstall": "npm run generate-icons"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
