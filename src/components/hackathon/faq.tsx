@@ -10,6 +10,10 @@ const faqs = [
         answer: "Anyone! Whether you're a student, professional, or just getting started, DevForge is open to all skill levels. We encourage diverse teams with different backgrounds.",
     },
     {
+        question: "Is registration final?",
+        answer: "No, registration is not final. This is an initial registration to express your interest. Our selection will be based on your responses, team composition, and overall fit for the hackathon. Selected participants will be notified via email.",
+    },
+    {
         question: "Do I need a team?",
         answer: "You can participate solo or in teams of up to 4 people. Don't have a team? No worries! We'll have a team formation session at the start of the event.",
     },
@@ -23,7 +27,7 @@ const faqs = [
     },
     {
         question: "Will there be prizes?",
-        answer: "Yes! We have several swags and API credits in store for prizes.",
+        answer: "Yes! Winners will receive a mystery Gemini swag kit and exclusive stickers!",
     },
 ];
 

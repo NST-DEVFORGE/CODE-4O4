@@ -501,7 +501,7 @@ export async function sendHackathonRegistrationEmail({
                 
                 <div class="spots-banner">
                   <p>
-                    ⚡ Only <span class="spots-number">50 SPOTS</span> Available<br>
+                    ⚡ Only <span class="spots-number">20 SLOTS</span> Left<br>
                     <span style="font-size: 15px; color: #fbbf24;">Selection-based registration • Register ASAP!</span>
                   </p>
                 </div>
@@ -555,7 +555,7 @@ ${type === "team" ? `Team Name: ${teamName}\nTeam Size: ${memberCount} members` 
 Registered Email: ${to}
 
 ⚡ IMPORTANT INFORMATION:
-Only 50 spots are available for this hackathon. Registrations are being processed on a selection basis.
+Only 20 slots are available for this hackathon. Registrations are being processed on a selection basis.
 
 ⏳ NEXT STEPS - PLEASE READ CAREFULLY:
 - This is NOT your final confirmation

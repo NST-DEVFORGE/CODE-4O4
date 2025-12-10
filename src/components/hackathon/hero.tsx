@@ -53,7 +53,7 @@ export function Hero() {
 
 
 
-                {/* 50 Spots Limited Banner */}
+                {/* 20 Slots Limited Banner */}
                 <motion.div
                     className="max-w-2xl mx-auto mt-6 mb-8"
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -62,7 +62,7 @@ export function Hero() {
                 >
                     <div className="px-6 py-3 bg-gradient-to-r from-orange-500/20 via-red-500/20 to-orange-500/20 border-2 border-orange-500/50 rounded-xl backdrop-blur-sm shadow-lg shadow-orange-500/10">
                         <p className="text-center text-orange-200 font-bold text-sm md:text-base">
-                            ⚡ Only <span className="text-orange-400 font-black text-lg md:text-xl">50 SPOTS</span> Available •
+                            ⚡ Only <span className="text-orange-400 font-black text-lg md:text-xl">20 SLOTS</span> Left •
                             <span className="text-white"> Selection-Based</span> •
                             <span className="text-orange-400 font-black"> Register ASAP!</span>
                         </p>
