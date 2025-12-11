@@ -70,7 +70,8 @@ export function proxy(request: NextRequest) {
     }
 
     // Protect admin routes - allow both admin and mentor roles
-    if (pathname.startsWith("/admin")) {
+    // Note: /hackathon/admin is NOT protected here - it shows appreciation message on client side
+    if (pathname.startsWith("/admin") && !pathname.startsWith("/hackathon/admin")) {
         if (!user || (user.role !== "admin" && user.role !== "mentor")) {
             console.log(`🔒 Non-admin/mentor user trying to access ${pathname}, redirecting to dashboard`);
             return NextResponse.redirect(new URL("/dashboard", request.url));

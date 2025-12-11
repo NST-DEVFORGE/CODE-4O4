@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
 import { getFirestoreDb } from "@/lib/firebase/client";
 import { collection, getDocs, addDoc, query, orderBy, Timestamp } from "firebase/firestore";
-import { Loader2, Upload, Download, Search, RefreshCw, Users, User, ShieldCheck, XCircle } from "lucide-react";
+import { Loader2, Upload, Download, Search, RefreshCw, Users, User, ShieldCheck, XCircle, Mail, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 
 // Removed hardcoded password - now using secure API authentication
@@ -26,6 +28,8 @@ type Registration = {
 };
 
 export default function AdminPage() {
+    const router = useRouter();
+    const { user, isAuthenticated } = useAuth();
     const [accessGranted, setAccessGranted] = useState(false);
     const [accessInput, setAccessInput] = useState("");
     const [registrations, setRegistrations] = useState<Registration[]>([]);
@@ -33,6 +37,21 @@ export default function AdminPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [importing, setImporting] = useState(false);
     const [configError, setConfigError] = useState<string | null>(null);
+    const [isAuthorizedRole, setIsAuthorizedRole] = useState(false);
+    const [checkingAuth, setCheckingAuth] = useState(true);
+
+    // Check if user has admin or mentor role
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            const hasAccess = user.role === "admin" || user.role === "mentor";
+            setIsAuthorizedRole(hasAccess);
+            setCheckingAuth(false);
+        } else if (isAuthenticated === false) {
+            // User is authenticated but not admin/mentor, or not authenticated at all
+            setIsAuthorizedRole(false);
+            setCheckingAuth(false);
+        }
+    }, [isAuthenticated, user]);
 
     // Auto-logout on refresh - no persistent authentication
     useEffect(() => {
@@ -194,6 +213,84 @@ export default function AdminPage() {
     const totalParticipants = registrations.reduce((acc, curr) => acc + curr.members.length, 0);
     const teamsCount = registrations.filter(r => r.type === "team").length;
 
+    // Show loading while checking authentication
+    if (checkingAuth) {
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center p-4">
+                <div className="text-white">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                </div>
+            </div>
+        );
+    }
+
+    // Show appreciation message for unauthorized users
+    if (!isAuthorizedRole) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-2xl bg-neutral-900 border border-orange-500/20 p-8 md:p-12 rounded-3xl shadow-2xl"
+                >
+                    <div className="flex justify-center mb-6">
+                        <div className="relative">
+                            <Heart className="h-16 w-16 text-orange-500 animate-pulse" fill="currentColor" />
+                            <ShieldCheck className="h-8 w-8 text-orange-400 absolute -top-2 -right-2" />
+                        </div>
+                    </div>
+
+                    <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+                        Hey there, curious mind! 👋
+                    </h2>
+
+                    <div className="space-y-4 text-neutral-300 text-center mb-8">
+                        <p className="text-lg">
+                            We absolutely <span className="text-orange-500 font-semibold">love</span> your curiosity and technical skills for finding this admin page! 🎉
+                        </p>
+
+                        <p className="text-base">
+                            Special shoutout to the person who left that creative message in our registrations -
+                            <span className="text-orange-400 italic"> "Yooo admin I have access to the admin page"</span> -
+                            we see you and we appreciate the heads up! 🙌
+                        </p>
+
+                        <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-6 my-6">
+                            <p className="text-white font-medium mb-3">
+                                💡 Know the admin password?
+                            </p>
+                            <p className="text-sm text-neutral-400 mb-4">
+                                If you have legitimate access or would like to collaborate with us, we'd love to hear from you!
+                            </p>
+                            <a
+                                href="mailto:support@code404.xyz"
+                                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-400 text-black font-semibold px-6 py-3 rounded-full transition-all transform hover:scale-105"
+                            >
+                                <Mail className="h-5 w-5" />
+                                Email us at support@code404.xyz
+                            </a>
+                        </div>
+
+                        <p className="text-sm text-neutral-500">
+                            We're always looking to collaborate with talented developers and security enthusiasts.
+                            Let's build something amazing together! 🚀
+                        </p>
+                    </div>
+
+                    <div className="flex justify-center">
+                        <button
+                            onClick={() => router.push("/")}
+                            className="text-orange-500 hover:text-orange-400 text-sm font-medium transition-colors"
+                        >
+                            ← Back to home
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        );
+    }
+
+    // Password prompt for authorized users (admin/mentor role)
     if (!accessGranted) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center p-4">
