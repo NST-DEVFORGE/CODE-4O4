@@ -127,27 +127,49 @@ export async function GET(request: NextRequest) {
         }, { status: 404 });
       }
 
+      const userData = userDoc.data();
       return NextResponse.json({
         ok: true,
         data: {
           id: userDoc.id,
-          ...userDoc.data(),
+          name: userData?.name,
+          email: userData?.email,
+          role: userData?.role,
+          avatar: userData?.avatar,
+          points: userData?.points || 0,
+          badges: userData?.badges || 0,
+          github: userData?.github,
+          portfolio: userData?.portfolio,
+          projectsCompleted: userData?.projectsCompleted || 0,
+          // Explicitly NOT including: password, username
         },
       });
     }
 
-    // Get leaderboard (top users by points)
+    // Get leaderboard (top users by points) - explicitly select safe fields
     const usersSnapshot = await db
       .collection("members")
       .orderBy("points", "desc")
       .limit(limit)
       .get();
 
-    const leaderboard = usersSnapshot.docs.map((doc, index) => ({
-      rank: index + 1,
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const leaderboard = usersSnapshot.docs.map((doc, index) => {
+      const data = doc.data();
+      return {
+        rank: index + 1,
+        id: doc.id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        avatar: data.avatar,
+        points: data.points || 0,
+        badges: data.badges || 0,
+        github: data.github,
+        portfolio: data.portfolio,
+        projectsCompleted: data.projectsCompleted || 0,
+        // Explicitly NOT including: password, username
+      };
+    });
 
     return NextResponse.json({
       ok: true,

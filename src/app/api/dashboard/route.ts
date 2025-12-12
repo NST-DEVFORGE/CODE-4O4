@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
     // Get user data from members collection
     const memberDoc = await db.collection("members").doc(userId).get();
-    
+
     if (!memberDoc.exists) {
       return NextResponse.json(
         { ok: false, message: "Member not found" },
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       .get();
 
     const memberProjectIds = projectMembersQuery.docs.map(doc => doc.data().projectId);
-    
+
     // 2. Get projects where user is the owner
     const ownedProjectsQuery = await db
       .collection("projects")
@@ -97,7 +97,7 @@ export async function GET(request: Request) {
     // Get upcoming sessions (next 5)
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
-    
+
     const sessionsQuery = await db
       .collection("sessions")
       .where("date", ">=", todayStr)
@@ -134,6 +134,11 @@ export async function GET(request: Request) {
           email: memberData?.email || "",
           role: memberData?.role || "student",
           avatar: memberData?.avatar || "",
+          points: memberData?.points || 0,
+          badges: memberData?.badges || 0,
+          github: memberData?.github,
+          portfolio: memberData?.portfolio,
+          // Explicitly NOT including: password, username
         },
         stats,
         projects: projectsWithCounts,

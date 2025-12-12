@@ -8,22 +8,36 @@ export async function GET() {
   try {
     console.log("🔄 Fetching members from Firestore...");
     const db = getDb();
-    
+
     const membersSnapshot = await db.collection("members").get();
-    const members = membersSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    
+
+    // Explicitly select safe fields - NEVER expose password field
+    const members = membersSnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        avatar: data.avatar,
+        points: data.points || 0,
+        badges: data.badges || 0,
+        github: data.github,
+        portfolio: data.portfolio,
+        joinedAt: data.joinedAt,
+        // Explicitly NOT including: password, username, credentialsUpdated
+      };
+    });
+
     console.log(`✅ Fetched ${members.length} members`);
-    return NextResponse.json({ 
-      ok: true, 
-      data: members 
+    return NextResponse.json({
+      ok: true,
+      data: members
     });
   } catch (error) {
     console.warn("⚠️  Failed to fetch members:", String(error));
-    return NextResponse.json({ 
-      ok: false, 
+    return NextResponse.json({
+      ok: false,
       message: "Failed to fetch members",
       error: String(error)
     }, { status: 500 });
@@ -42,21 +56,21 @@ export async function POST(request: Request) {
       points?: number;
       badges?: number;
     };
-    
+
     console.log("📝 Received member request:", body);
-    
+
     const { id, name, email, role } = body;
-    
+
     if (!name || !email) {
       return NextResponse.json(
         { ok: false, message: "Name and email are required" },
         { status: 400 },
       );
     }
-    
+
     try {
       const db = getDb();
-      
+
       const memberData = {
         name,
         email,
@@ -66,7 +80,7 @@ export async function POST(request: Request) {
         badges: body.badges || 0,
         updatedAt: serverTimestamp(),
       };
-      
+
       let docRef;
       if (id) {
         // Update existing member
@@ -81,17 +95,17 @@ export async function POST(request: Request) {
         });
         console.log("✅ Created new member:", docRef.id);
       }
-      
-      return NextResponse.json({ 
-        ok: true, 
+
+      return NextResponse.json({
+        ok: true,
         message: id ? "Member updated" : "Member created",
         data: { id: id || docRef.id }
       });
     } catch (firestoreError) {
       console.error("❌ Firestore operation failed:", String(firestoreError));
       return NextResponse.json(
-        { 
-          ok: false, 
+        {
+          ok: false,
           message: "Failed to save member. Please check your database connection.",
           error: String(firestoreError)
         },
@@ -101,8 +115,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("❌ Member operation error:", error);
     return NextResponse.json(
-      { 
-        ok: false, 
+      {
+        ok: false,
         message: "Failed to save member",
         error: String(error)
       },

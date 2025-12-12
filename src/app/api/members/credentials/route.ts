@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase/admin";
 import { sendCredentialsEmail } from "@/lib/email";
+import { hashPassword, generateSecurePassword } from "@/lib/auth-utils";
 
 // Update member credentials
 export async function PATCH(request: Request) {
@@ -26,7 +27,7 @@ export async function PATCH(request: Request) {
     }
 
     const memberData = memberDoc.data();
-    
+
     // Generate username from name if not provided
     let finalUsername = username;
     if (!finalUsername && memberData?.name) {
@@ -34,36 +35,23 @@ export async function PATCH(request: Request) {
       finalUsername = memberData.name.split(" ")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
     }
 
-    // Generate unique password from name if not provided
+    // Generate secure random password if not provided
     let finalPassword = password;
-    if (!finalPassword && memberData?.name) {
-      const firstName = memberData.name.split(" ")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
-      const lastName = memberData.name.split(" ")[1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "";
-      
-      // Generate truly random password
-      const randomNum = Math.floor(Math.random() * 9000) + 1000; // 4-digit number (1000-9999)
-      const specialChars = ['@', '!', '#', '$', '&'];
-      const randomSpecial = specialChars[Math.floor(Math.random() * specialChars.length)];
-      
-      // Random pattern selection
-      const patternChoices = [
-        `${firstName}${randomSpecial}${randomNum}`,
-        `${firstName}${randomNum}${randomSpecial}`,
-        `${firstName}_${randomNum}`,
-        `${firstName}${lastName ? lastName.charAt(0).toUpperCase() : ''}${randomNum}`,
-      ];
-      
-      finalPassword = patternChoices[Math.floor(Math.random() * patternChoices.length)];
+    if (!finalPassword) {
+      finalPassword = generateSecurePassword(12);
     }
 
-    // Update the member document
+    // Hash the password before storing
+    const hashedPassword = await hashPassword(finalPassword);
+
+    // Update the member document with hashed password
     await memberRef.update({
       username: finalUsername,
-      password: finalPassword,
+      password: hashedPassword,
       credentialsUpdated: new Date().toISOString(),
     });
 
-    console.log(`✅ Updated credentials for ${memberData?.name}: ${finalUsername} / ${finalPassword}`);
+    console.log(`✅ Updated credentials for ${memberData?.name} (username: ${finalUsername})`);
 
     // Send email with credentials if requested
     let emailSent = false;
@@ -84,8 +72,8 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      message: emailSent 
-        ? "Credentials updated and email sent successfully" 
+      message: emailSent
+        ? "Credentials updated and email sent successfully"
         : "Credentials updated successfully",
       credentials: {
         username: finalUsername,

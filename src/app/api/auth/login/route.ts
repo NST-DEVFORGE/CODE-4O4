@@ -1,7 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getDb } from "@/lib/firebase/admin";
+import { comparePassword } from "@/lib/auth-utils";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = checkRateLimit(request, RATE_LIMITS.AUTH);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const { username, password } = await request.json();
 
@@ -18,7 +26,7 @@ export async function POST(request: Request) {
 
     // Search for member by username (case-insensitive)
     const normalizedUsername = username.trim().toLowerCase();
-    
+
     const membersSnapshot = await db
       .collection("members")
       .where("username", "==", normalizedUsername)
@@ -36,8 +44,10 @@ export async function POST(request: Request) {
     const memberDoc = membersSnapshot.docs[0];
     const memberData = memberDoc.data();
 
-    // Check password
-    if (memberData.password !== password) {
+    // Check password using secure bcrypt comparison
+    const isPasswordValid = await comparePassword(password, memberData.password || '');
+
+    if (!isPasswordValid) {
       console.log("❌ Incorrect password for user:", normalizedUsername);
       return NextResponse.json(
         { ok: false, message: "Incorrect password. Try again." },
