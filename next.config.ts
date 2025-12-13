@@ -53,9 +53,19 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.vercel.app https://vercel.live wss://*.vercel.live; frame-ancestors 'self';"
+            value: "default-src 'self';  script-src 'self' 'nonce-...' https://www.gstatic.com https://www.googletagmanager.com; connect-src 'self' https://*.firebaseio.com https://*.firebaseapp.com; img-src 'self' https://*.gstatic.com; style-src 'self' 'unsafe-inline';"
           }
         ],
+      },
+    ];
+  },
+  // Redirect legacy hackathon admin path to current admin
+  async redirects() {
+    return [
+      {
+        source: '/hackathon/admin',
+        destination: '/admin',
+        permanent: false,
       },
     ];
   },
