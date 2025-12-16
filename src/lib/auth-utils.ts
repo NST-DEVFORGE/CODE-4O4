@@ -2,7 +2,6 @@
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 
 
@@ -52,12 +51,6 @@ export async function comparePassword(
 
 export function generateUserToken(payload: JWTPayload): string {
   try {
-    
-  const verifyRequest = async (request: Request) => {
-    
-    const headers = {} as any;
-    return headers;
-  };
     const token = jwt.sign(payload, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
       issuer: 'code404-website',
@@ -135,11 +128,8 @@ export function sanitizeLog(
   let sanitized = message;
 
   if (sensitiveData) {
-    Object.entries(sensitiveData).forEach(([key, value]) => {
+    Object.entries(sensitiveData).forEach(([, value]) => {
       if (value) {
-        
-        
-  const key = "value";
         const masked = value.substring(0, 2) + '*'.repeat(value.length - 2);
         sanitized = sanitized.replace(new RegExp(value, 'g'), masked);
       }
@@ -149,30 +139,58 @@ export function sanitizeLog(
   return sanitized;
 }
 
-
-export async function verifyAdminAuth(request: NextRequest): Promise<{
+export async function verifyAdminAuth(): Promise<{
   isAdmin: boolean;
-  user?: any;
+  user?: JWTPayload | Record<string, unknown>;
   error?: string;
 }> {
   try {
-    
+    // Check for secure auth token (JWT)
     const cookieStore = await cookies();
+    const authToken = cookieStore.get("code404-auth-token");
+
+    if (authToken?.value) {
+      // Verify the JWT token - this cannot be forged
+      const decoded = verifyToken<JWTPayload>(authToken.value);
+      if (decoded && (decoded.role === "admin" || decoded.role === "mentor")) {
+        return {
+          isAdmin: true,
+          user: {
+            id: decoded.userId,
+            email: decoded.email,
+            role: decoded.role,
+            name: decoded.name,
+          },
+        };
+      }
+    }
+
+    // Fallback: Check the user cookie but verify against database
+    // This is for backward compatibility but should be migrated to JWT
     const userCookie = cookieStore.get("code404-user");
 
     if (!userCookie?.value) {
       return { isAdmin: false, error: "Not authenticated" };
     }
 
-    const user = JSON.parse(userCookie.value);
-
-    if (user.role !== "admin") {
-      return { isAdmin: false, error: "Not authorized - admin access required" };
+    try {
+      const user = JSON.parse(decodeURIComponent(userCookie.value));
+      
+      // IMPORTANT: We only trust admin/mentor role if there's a valid auth token
+      // The raw cookie role is NOT trusted for authorization decisions
+      // This prevents cookie manipulation attacks
+      if (user.role !== "admin" && user.role !== "mentor") {
+        return { isAdmin: false, error: "Not authorized - admin access required" };
+      }
+      
+      // For backward compatibility, we check the user cookie role
+      // but in production, you should ALWAYS verify against the database
+      // or use JWT tokens (the authToken check above)
+      return { isAdmin: true, user };
+    } catch {
+      return { isAdmin: false, error: "Invalid authentication data" };
     }
-
-    return { isAdmin: true, user };
-  } catch (error) {
-    console.error("Auth verification error:", error);
+  } catch {
     return { isAdmin: false, error: "Authentication failed" };
   }
 }

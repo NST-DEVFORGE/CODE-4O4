@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
   try {
     
-    const auth = await verifyAdminAuth(request);
+    const auth = await verifyAdminAuth();
     if (!auth.isAdmin) {
       return NextResponse.json(
         { ok: false, message: auth.error || "Unauthorized" },

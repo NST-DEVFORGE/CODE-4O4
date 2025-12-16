@@ -1,19 +1,39 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase/admin";
+import { verifyToken, type JWTPayload } from "@/lib/auth-utils";
+import { cookies } from "next/headers";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    // Authentication check - only admins can view registrations
-    const cookieHeader = request.headers.get("cookie");
+    // Secure authentication check using JWT token
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get("code404-auth-token");
+    
     let isAdmin = false;
-    if (cookieHeader) {
-      const cookies = cookieHeader.split(';').map(c => c.trim());
-      const userCookie = cookies.find(c => c.startsWith('code404-user='));
-      if (userCookie) {
+
+    if (authToken?.value) {
+      // Verify the JWT token - this cannot be forged
+      const decoded = verifyToken<JWTPayload>(authToken.value);
+      if (decoded && (decoded.role === "admin" || decoded.role === "mentor")) {
+        isAdmin = true;
+      }
+    }
+
+    // Fallback check for backward compatibility with user cookie
+    // Note: This is less secure and should be migrated to JWT-only
+    if (!isAdmin) {
+      const userCookie = cookieStore.get("code404-user");
+      if (userCookie?.value) {
         try {
-          const user = JSON.parse(decodeURIComponent(userCookie.split('=')[1]));
-          isAdmin = user && (user.role === 'admin' || user.role === 'mentor');
-        } catch {  }
+          const user = JSON.parse(decodeURIComponent(userCookie.value));
+          // Only trust if role is admin or mentor and we have a matching auth token
+          // WITHOUT an auth token, we don't trust the cookie role for security
+          if (authToken?.value && (user.role === "admin" || user.role === "mentor")) {
+            isAdmin = true;
+          }
+        } catch {
+          // Invalid cookie data
+        }
       }
     }
 

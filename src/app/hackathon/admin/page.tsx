@@ -43,16 +43,16 @@ export default function AdminPage() {
 
     // Check if user has admin or mentor role
     useEffect(() => {
-        console.log('🔍 Auth check:', { isAuthenticated, user, role: user?.role });
+        // Auth check performed - no logging of sensitive data
 
         if (isAuthenticated && user) {
             const hasAccess = user.role === "admin" || user.role === "mentor";
-            console.log('✅ Access check:', { hasAccess, role: user.role });
+
             setIsAuthorizedRole(hasAccess);
             setCheckingAuth(false);
         } else {
             // Not authenticated or no user data
-            console.log('❌ No auth or user');
+
             setIsAuthorizedRole(false);
             setCheckingAuth(false);
         }

@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
   try {
     
-    const auth = await verifyAdminAuth(request);
+    const auth = await verifyAdminAuth();
     if (!auth.isAdmin) {
       return NextResponse.json(
         { ok: false, message: auth.error || "Unauthorized" },
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       email?: string;
       username?: string;
       password?: string;
-      [key: string]: any;
+      [key: string]: string | undefined;
     }> = [];
 
     if (sendToAll) {
@@ -71,7 +71,15 @@ export async function POST(request: NextRequest) {
       sent: 0,
       failed: 0,
       skipped: 0,
-      details: [] as any[],
+      details: [] as Array<{
+        name?: string;
+        email: string;
+        status: string;
+        reason?: string;
+        username?: string;
+        messageId?: string;
+        error?: string;
+      }>,
     };
 
     for (const member of membersToEmail) {
